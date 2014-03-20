@@ -1,5 +1,6 @@
-#include "Util.h"
 #include <cmath>
+
+#include "Util.h"
 
 using namespace proj;
 using namespace cv;
@@ -112,3 +113,20 @@ int proj::distDiff(Point x, Point y)
 {
 	return (int)sqrt(pow(abs(y.x - x.x), 2) + pow(abs(x.y - y.y), 2));
 }
+
+#ifdef _DEBUG
+
+bool displayed = false;
+void debugDisplayImage(Mat& img)
+{
+	if (!displayed)
+	{
+		namedWindow("Debug");
+		displayed = true;
+	}
+
+	imshow("Debug", img);
+	waitKey(0);
+}
+
+#endif

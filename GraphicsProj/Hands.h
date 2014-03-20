@@ -22,13 +22,10 @@ namespace proj
 
 		Hand& getHand(int hand) { return mHands[hand]; }
 
-		void calibrateHand(int hand, bool open, cv::Rect& area);
-		bool checkHandDistance(int hand, cv::Rect& rect);
 		void setHandRect(int hand, cv::Rect& pos) { mHands[hand].setPrevRect(pos); }
 		bool updateHands(cv::vector<cv::Rect>& hands);
-		bool checkSize(cv::Rect& hand, int handNo);
-		cv::Rect getPrevRect(int hand) { return mHands[hand].getPrevRect(); }
-		Line getLine(int hand) { return mLines[hand]; }
+		cv::Rect& getPrevRect(int hand) { return mHands[hand].getPrevRect(); }
+		Line& getLine(int hand) { return mLines[hand]; }
 
 	private:
 		Hand mHands[2];

@@ -3,22 +3,26 @@
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2\highgui\highgui.hpp>
 
 #include "Colour.h"
 
-#define uint unsigned int
+typedef unsigned int uint;
 
 namespace proj 
 {
 	struct switches
 	{
-		switches() : mIsVideo(false), mIsCamera(false), mFilename(), mCameraId(0) {}
+		switches() : mIsVideo(false), mIsCamera(false), mFilename(), mCameraId(0), mDebugDisplay(false) {}
 
 		bool mIsVideo;
 		bool mIsCamera;
 		std::string mFilename;
 		int mCameraId;
+		bool mDebugDisplay;
 	};
+
+	const uint MAX_HANDS = 2;
 
 	const uchar MAX_DIFF = 60;
 
@@ -31,6 +35,10 @@ namespace proj
 	cv::Point centreRect(cv::Rect&);
 
 	int distDiff(cv::Point, cv::Point);
+
+#ifdef _DEBUG
+	void debugDisplayImage(cv::Mat&);
+#endif
 }
 
 #endif
