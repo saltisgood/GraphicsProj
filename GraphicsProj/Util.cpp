@@ -45,7 +45,7 @@ void proj::chromaKey(Mat& img, Colour& colour)
         }
     }
 }
-
+/*
 void proj::blur(Mat& img, uint passes)
 {
 	cv::blur(img, img, Size(3, 3), Point(-1, -1));
@@ -55,6 +55,7 @@ void proj::blur(Mat& img, uint passes)
 		blur(img, passes - 1);
 	}
 }
+*/
 
 vector<Rect> proj::sortRect(vector<Rect>& arr, int maxsort)
 {

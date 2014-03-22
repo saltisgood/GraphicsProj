@@ -1,7 +1,7 @@
 #ifndef HAND_H_
 #define HAND_H_
 
-#include <opencv2\core\core.hpp>
+#include <opencv2/core/core.hpp>
 
 #include "Util.h"
 

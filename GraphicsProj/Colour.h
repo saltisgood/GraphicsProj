@@ -1,7 +1,7 @@
 #ifndef COLOUR_H_
 #define COLOUR_H_
 
-#include <opencv2\core\core.hpp>
+#include <opencv2/core/core.hpp>
 
 #include "Util.h"
 

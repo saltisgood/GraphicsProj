@@ -212,7 +212,7 @@ void printUsage()
 void thresherShark()
 {
 	Mat threshold_output;
-	vector<vector<Point>> contours;
+	vector<vector<Point> > contours;
 	vector<Vec4i> hierarchy;
 	
 	// Detecte edges using Threshold
@@ -221,7 +221,7 @@ void thresherShark()
 	findContours(threshold_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
 
 	// Approximate contours to polygons + get bounding rects and circles
-	vector<vector<Point>> contours_poly(contours.size());
+	vector<vector<Point> > contours_poly(contours.size());
 	vector<Rect> boundRect(contours.size());
 
 	for (int i = 0; i < contours.size(); i++)
@@ -244,7 +244,9 @@ void thresherShark()
 	{
 		if (!mHands.updateHands(sortedHands))
 		{
+#ifdef _DEBUG
 			cout << "Blerghhhh! Errorrr on frame " << tickCount << endl;
+#endif
 		}
 	}
 
