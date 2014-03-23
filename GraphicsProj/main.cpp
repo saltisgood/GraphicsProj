@@ -198,7 +198,12 @@ int main(int argc, char** argv)
 	// Wait for user input
 	waitKey(0);
 
-	delete mSprite;
+	if (mSprite)
+	{
+		delete mSprite;
+		mSprite = NULL;
+	}
+
 
 	return 0;
 }
@@ -407,40 +412,13 @@ void drawcallback(void* userdata)
     if (pTex->empty())
         return;
 
+	if (!mSprite)
+	{
+		return;
+	}
+
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	mSprite->setTexture(pTex);
 	mSprite->draw(mVPMatrix);
-	
-	/*
-    glLoadIdentity();
-
-    glTranslated(0.0, 0.0, 1.0);
-
-    glRotatef( 55, 1, 0, 0 );
-    glRotatef( 45, 0, 1, 0 );
-    glRotatef( 0, 0, 0, 1 );
-
-    static const int coords[6][4][3] = {
-        { { +1, -1, -1 }, { -1, -1, -1 }, { -1, +1, -1 }, { +1, +1, -1 } },
-        { { +1, +1, -1 }, { -1, +1, -1 }, { -1, +1, +1 }, { +1, +1, +1 } },
-        { { +1, -1, +1 }, { +1, -1, -1 }, { +1, +1, -1 }, { +1, +1, +1 } },
-        { { -1, -1, -1 }, { -1, -1, +1 }, { -1, +1, +1 }, { -1, +1, -1 } },
-        { { +1, -1, +1 }, { -1, -1, +1 }, { -1, -1, -1 }, { +1, -1, -1 } },
-        { { -1, -1, +1 }, { +1, -1, +1 }, { +1, +1, +1 }, { -1, +1, +1 } }
-    };
-
-    glEnable(GL_TEXTURE_2D);
-    pTex->bind();
-
-    for (int i = 0; i < 6; ++i) {
-                glColor3ub( i*20, 100+i*10, i*42 );
-                glBegin(GL_QUADS);
-                for (int j = 0; j < 4; ++j) {
-                        glVertex3d(0.2*coords[i][j][0], 0.2 * coords[i][j][1], 0.2*coords[i][j][2]);
-                }
-                glEnd();
-    }
-
-	*/
 }

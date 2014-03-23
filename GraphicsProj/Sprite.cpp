@@ -28,7 +28,7 @@ Sprite::~Sprite()
 
 	if (mTex)
 	{
-		delete mTex;
+		mTex->release();
 		mTex = NULL;
 	}
 }
