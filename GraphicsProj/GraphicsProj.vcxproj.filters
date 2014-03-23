@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\sGL">
+      <UniqueIdentifier>{0879febb-3535-4277-a5c5-00ceaf61935a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\sGL">
+      <UniqueIdentifier>{2d12ddf1-50cf-493a-8024-4871298ae6cd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Util.cpp">
@@ -26,6 +32,21 @@
     </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TextureRegion.cpp">
+      <Filter>Source Files\sGL</Filter>
+    </ClCompile>
+    <ClCompile Include="Matrix.cpp">
+      <Filter>Source Files\sGL</Filter>
+    </ClCompile>
+    <ClCompile Include="Program.cpp">
+      <Filter>Source Files\sGL</Filter>
+    </ClCompile>
+    <ClCompile Include="Sprite.cpp">
+      <Filter>Source Files\sGL</Filter>
+    </ClCompile>
+    <ClCompile Include="Vertices.cpp">
+      <Filter>Source Files\sGL</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -43,6 +64,21 @@
     </ClInclude>
     <ClInclude Include="Line.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Matrix.h">
+      <Filter>Header Files\sGL</Filter>
+    </ClInclude>
+    <ClInclude Include="Program.h">
+      <Filter>Header Files\sGL</Filter>
+    </ClInclude>
+    <ClInclude Include="Sprite.h">
+      <Filter>Header Files\sGL</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureRegion.h">
+      <Filter>Header Files\sGL</Filter>
+    </ClInclude>
+    <ClInclude Include="Vertices.h">
+      <Filter>Header Files\sGL</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
