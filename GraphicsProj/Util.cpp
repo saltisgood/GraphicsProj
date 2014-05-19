@@ -4,6 +4,7 @@
 
 using namespace proj;
 using namespace cv;
+using namespace std;
 
 void proj::chromaKey(Mat& img, Colour& colour)
 {
@@ -113,6 +114,24 @@ Point proj::centreRect(Rect& rect)
 int proj::distDiff(Point x, Point y)
 {
 	return (int)sqrt(pow(abs(y.x - x.x), 2) + pow(abs(x.y - y.y), 2));
+}
+
+void proj::drawText(cv::Mat& img, const std::string& text, const cv::Point& org, double fontScale, const cv::Scalar& colour, bool isCentred)
+{
+	int baseline = 0;
+	Size textSize = getTextSize(text, cv::FONT_HERSHEY_COMPLEX, fontScale, 3, &baseline);
+
+	Point textOrg;
+	if (isCentred)
+	{
+		textOrg = Point(org.x - (textSize.width / 2), org.y + (textSize.height / 2));
+	}
+	else
+	{
+		textOrg = Point(org.x, org.y + textSize.height);
+	}
+
+	putText(img, text, textOrg, cv::FONT_HERSHEY_COMPLEX, fontScale, colour, 3);
 }
 
 #ifdef _DEBUG

@@ -1,0 +1,194 @@
+#include "Looper.h"
+
+using namespace disp;
+using namespace std;
+using namespace cv;
+using namespace proj;
+using namespace sGL;
+
+const string WINDOW_TITLE = "Graphics Project";
+const int THRESH = 120;
+const int MAX_THRESH = 255;
+const int ESC_KEY = 27;
+
+Looper::Looper(Display *display, VideoCapture *videoIn, switches& args) : mDisplay(display), mVideoInput(videoIn), mArgs(args),
+	mProjMatrix(), mViewMatrix(), mVPMatrix(), mTicks(0), mSource(), mGloveColour(8, 110, 97), mImageMod(), mImageKey(),
+	mHands(), mDrawColour(0, 0, 255, 255), mProgramLogic(display)
+{
+	mTexture = new cv::ogl::Texture2D();
+
+	init();
+}
+
+Looper::~Looper()
+{
+	mTexture->release();
+}
+
+void Looper::init()
+{
+	namedWindow(WINDOW_TITLE, CV_WINDOW_OPENGL | CV_WINDOW_AUTOSIZE);
+	resizeWindow(WINDOW_TITLE, mDisplay->getWidth(), mDisplay->getHeight());
+
+	float ratio = (float) mDisplay->getWidth() / (float) mDisplay->getHeight();
+
+	if (ratio > 1.0f)
+	{
+		mProjMatrix.frustum(-ratio, ratio, -1, 1, 1, 10);
+	}
+	else
+	{
+		mProjMatrix.frustum(-1, 1, -1.0f / ratio, 1.0f / ratio, 1, 10);
+	}
+
+	int orth = MIN(mDisplay->getWidth(), mDisplay->getHeight());
+
+	mViewMatrix.ortho(-orth / 2.0f, orth / 2.0f, -orth / 2.0f, orth / 2.0f, 0.1f, 100.0f);
+
+	mVPMatrix = (mViewMatrix * mProjMatrix);
+
+	mSprite = new Sprite(mDisplay->getWidth(), mDisplay->getHeight());
+	mSprite->setTexture(mTexture);
+
+	setMouseCallback(WINDOW_TITLE, onMouse, this);
+	setOpenGlDrawCallback(WINDOW_TITLE, onDraw, this);
+
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+	glViewport(0, 0, mDisplay->getWidth(), mDisplay->getHeight());
+}
+
+void Looper::loop()
+{
+	for (*mVideoInput >> mSource; mSource.data != NULL; *mVideoInput >> mSource, mTicks++)
+	{
+		// Do stuff!
+		imgMod();
+
+		if (mArgs.mDebugDisplay)
+		{
+			for (int i = 0; i < MAX_HANDS; i++)
+			{
+				rectangle(mSource, mHands.getPrevRect(i).tl(), mHands.getPrevRect(i).br(), mDrawColour, 2, 8, 0);
+
+				Line ln = mHands.getLine(i);
+				ln.resetListIter();
+				for (int j = 0; j < ln.getLineNumbers(); j++)
+				{
+					Point curr = ln.getCurrentPoint();
+					Point next = ln.getNextPoint();
+					line(mSource, curr, next, mDrawColour, 3);
+				}
+			}
+		}
+
+		mProgramLogic.drawAnything(mSource);
+
+		mTexture->copyFrom(mSource);
+		updateWindow(WINDOW_TITLE);
+
+		char c = (char)waitKey(25);
+		if (c == ESC_KEY) break;
+	}
+}
+
+void Looper::imgMod()
+{
+	// Copy source image
+	mImageKey = mSource.clone();
+	// Extract colour
+	proj::chromaKey(mImageKey, mGloveColour);
+	// Convert to grayscale
+	cvtColor(mImageKey, mImageMod, CV_BGR2GRAY);
+	// Blur
+	blur(mImageMod, mImageMod, Size(3, 3));
+
+	shapeDetect();	
+}
+
+void Looper::shapeDetect()
+{
+	Mat threshold_out;
+	vector<vector<Point> > contours;
+	vector<Vec4i> hierarchy;
+
+	//Detect edges
+	threshold(mImageMod, threshold_out, THRESH, MAX_THRESH, THRESH_BINARY);
+	// Find shapes
+	findContours(threshold_out, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+	// Approximate contours to polys
+	vector<vector<Point> > shapes(contours.size());
+	vector<Rect> boundRect(contours.size());
+
+	for (int i = 0; i < contours.size(); i++)
+	{
+		approxPolyDP(Mat(contours[i]), shapes[i], 3, true);
+		boundRect[i] = boundingRect(Mat(shapes[i]));
+	}
+
+	vector<Rect> sortedHands = sortRect(boundRect, 5);
+
+	interpretImg(sortedHands);
+}
+
+void Looper::interpretImg(vector<Rect>& shapes)
+{
+	if (mArgs.mIsCamera)
+	{
+
+	}
+	else // Is Video
+	{
+#ifdef _DEBUG
+		if (mTicks == 0)
+		{
+			calibrate(mHands, shapes, true);
+		}
+		else if (mTicks == 124)
+		{
+			calibrate(mHands, shapes, false);
+		}
+		else if (mTicks > 124)
+		{
+			if (!mHands.updateHands(shapes))
+			{
+				cout << "Blerghhhh! Errorrr on frame " << mTicks << endl;
+			}
+		}
+#elif
+		// Nothing yet
+#endif
+	}
+}
+
+void disp::onMouse(int event, int x, int y, int flags, void *data)
+{
+	//TODO
+}
+
+void disp::onDraw(void *data)
+{
+	Looper *looper = static_cast<Looper*>(data);
+
+	glClear(GL_COLOR_BUFFER_BIT);
+	
+	looper->mSprite->draw(looper->mVPMatrix);
+}
+
+
+
+
+void disp::calibrate(Hands& hands, vector<Rect>& rects, bool open)
+{
+	if (rects[0].x < rects[1].x)
+	{
+		hands.getHand(Hand::LEFT).calibrate(rects[0], open);
+		hands.getHand(Hand::RIGHT).calibrate(rects[1], open);
+	}
+	else
+	{
+		hands.getHand(Hand::RIGHT).calibrate(rects[0], open);
+		hands.getHand(Hand::LEFT).calibrate(rects[1], open);
+	}
+}

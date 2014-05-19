@@ -19,6 +19,12 @@
     <Filter Include="Header Files\sGL">
       <UniqueIdentifier>{2d12ddf1-50cf-493a-8024-4871298ae6cd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Display">
+      <UniqueIdentifier>{a3098bad-6f4f-447c-a040-5ed8fd0b2663}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Display">
+      <UniqueIdentifier>{e0a917eb-21d4-479f-ae22-8de76d9bfccc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Util.cpp">
@@ -47,6 +53,15 @@
     </ClCompile>
     <ClCompile Include="Vertices.cpp">
       <Filter>Source Files\sGL</Filter>
+    </ClCompile>
+    <ClCompile Include="Looper.cpp">
+      <Filter>Source Files\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="Logic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Colour.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -79,6 +94,15 @@
     </ClInclude>
     <ClInclude Include="Vertices.h">
       <Filter>Header Files\sGL</Filter>
+    </ClInclude>
+    <ClInclude Include="Looper.h">
+      <Filter>Header Files\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="Display.h">
+      <Filter>Header Files\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="Logic.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

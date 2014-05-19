@@ -3,30 +3,27 @@
 
 #include <opencv2/core/core.hpp>
 
-#include "Util.h"
-
 namespace proj
 {
 	class Colour
 	{
 	public:
-		Colour(uchar r, uchar g, uchar b)
+		Colour(uchar r, uchar g, uchar b) : R(r), G(g), B(b)
 		{
-			R = r;
-			G = g;
-			B = b;
+			mScalar = NULL;
 		}
 
-		virtual ~Colour() {}
+		virtual ~Colour();
 
-		uchar getRed() { return R; }
-		uchar getBlue() { return B; }
-		uchar getGreen() { return G; }
+		uchar getRed() const { return R; }
+		uchar getBlue() const { return B; }
+		uchar getGreen() const { return G; }
 
-		cv::Scalar toScalar() { return cv::Scalar(B, G, R); }
+		cv::Scalar toScalar();
 
 	protected:
 		uchar R, G, B;
+		cv::Scalar *mScalar;
 	};
 }
 

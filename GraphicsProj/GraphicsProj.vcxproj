@@ -156,8 +156,11 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Colour.cpp" />
     <ClCompile Include="Hand.cpp" />
     <ClCompile Include="Hands.cpp" />
+    <ClCompile Include="Logic.cpp" />
+    <ClCompile Include="Looper.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Matrix.cpp" />
     <ClCompile Include="Program.cpp" />
@@ -168,9 +171,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Colour.h" />
+    <ClInclude Include="Display.h" />
     <ClInclude Include="Hand.h" />
     <ClInclude Include="Hands.h" />
     <ClInclude Include="Line.h" />
+    <ClInclude Include="Logic.h" />
+    <ClInclude Include="Looper.h" />
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="Program.h" />
     <ClInclude Include="Sprite.h" />

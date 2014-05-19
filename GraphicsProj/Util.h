@@ -36,6 +36,8 @@ namespace proj
 
 	int distDiff(cv::Point, cv::Point);
 
+	void drawText(cv::Mat& img, const std::string& text, const cv::Point& org, double fontScale, const cv::Scalar& colour, bool isCentred);
+
 #ifdef _DEBUG
 	void debugDisplayImage(cv::Mat&);
 #endif

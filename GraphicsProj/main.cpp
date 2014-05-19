@@ -15,6 +15,7 @@
 #include "Hands.h"
 #include "Matrix.h"
 #include "Sprite.h"
+#include "Looper.h"
 
 using namespace cv;
 using namespace std;
@@ -30,10 +31,6 @@ int tickCount = 0;
 Mat src; Mat src_gray; Mat src_key;
 Scalar mRed(0, 0, 255, 255);
 Hands mHands = Hands();
-Matrix mProjMatrix = Matrix();
-Matrix mViewMatrix = Matrix();
-Matrix mVPMatrix = Matrix();
-Sprite *mSprite;
 
 switches Commands = switches();
 
@@ -41,9 +38,6 @@ void thresherShark();
 void calibrate(vector<Rect>&, bool);
 bool interpretCommandSwitches(int, char**);
 void printUsage();
-
-void mouseCallback(int event, int x, int y, int flags, void* data);
-void drawcallback(void* data);
 
 #ifdef _DEBUG
 void debugPrintCommands();
@@ -89,121 +83,15 @@ int main(int argc, char** argv)
 		cout << ((Commands.mIsCamera) ? "Camera" : "Video") << " couldn't be opened!" << endl;
 		return -1;
 	}
-
+	
 	Size vidSize = Size((int) vid.get(CV_CAP_PROP_FRAME_WIDTH), (int) vid.get(CV_CAP_PROP_FRAME_HEIGHT));
 
-	// The video/camera opened successfully, so display the window
-	namedWindow(WINDOW_TITLE, CV_WINDOW_OPENGL | CV_WINDOW_AUTOSIZE);
-	resizeWindow(WINDOW_TITLE, vidSize.width, vidSize.height);
-
-	float ratio = (float) vidSize.width / (float) vidSize.height;
-
-	if (vidSize.width > vidSize.height)
-	{
-		mProjMatrix.frustum(-ratio, ratio, -1, 1, 1, 10);
-	}
-	else
-	{
-		mProjMatrix.frustum(-1, 1, -1.0f / ratio, 1.0f / ratio, 1, 10);
-	}
-
-	int orth = min(vidSize.width, vidSize.height);
-
-	mViewMatrix.ortho(-orth / 2.0f, orth / 2.0f, -orth / 2.0f, orth / 2.0f, 0.1f, 100.0f);
-
-	cout << "mProjMatrix = " << mProjMatrix << endl;
-	cout << "mViewMatrix = " << mViewMatrix << endl;
-
-	//mVPMatrix = (mProjMatrix * mViewMatrix);
-	mVPMatrix = (mViewMatrix * mProjMatrix);
-
-	cout << "mVPMatrix = " << mVPMatrix << endl;
+	disp::Display disp = disp::Display(vidSize.width, vidSize.height);
+	disp::Looper looper = disp::Looper(&disp, &vid, Commands);
+	looper.loop();
 	
-	mSprite = new Sprite(vidSize.width, vidSize.height);
-
-	setMouseCallback(WINDOW_TITLE, mouseCallback);
-
-	ogl::Texture2D tex;
-
-	setOpenGlDrawCallback(WINDOW_TITLE, drawcallback, &tex);
-
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-
-	glViewport(0, 0, vidSize.width, vidSize.height);
-
-	//updateWindow(WINDOW_TITLE);
-	
-	if (GLEE_VERSION_3_0)
-	{
-		cout << "Version 3 enabled " << endl;
-	}
-
-	if (GLEE_ARB_shader_objects)
-	{
-		GLuint shader = glCreateShader(GL_VERTEX_SHADER);
-		GLenum error;
-		if ((error = glGetError()) != GL_NO_ERROR)
-		{
-			cout << "error - " << error << endl;
-		}
-		else
-		{
-			cout << "Success! Shader - " << shader <<  endl;
-		}
-	}
-
-	proj::Colour gloveColour(8, 110, 97);
-
-	for (vid >> src; src.data != NULL; vid >> src, tickCount++)
-	{
-		//debugDisplayImage(src);
-
-		tex.copyFrom(src);
-		updateWindow(WINDOW_TITLE);
-
-		// Load source image
-		//src = imread(argv[1]);
-		src_key = src.clone();
-
-		//debugDisplayImage(src_key);
-
-		// Extract only glove colour
-		proj::chromaKey(src_key, gloveColour);
-
-		//debugDisplayImage(src_key);
-
-		// Convert image to grey
-		cvtColor(src_key, src_gray, CV_BGR2GRAY);
-
-		//debugDisplayImage(src_gray);
-
-		// Blur
-		blur(src_gray, src_gray, Size(3, 3));
-
-		//debugDisplayImage(src_gray);
-		// Create Window
-		//string source = "Source";
-		//namedWindow(source);
-		//imshow(source, src);
-
-		// Fucking thresh
-		thresherShark();
-
-		char c = (char)cvWaitKey(25);
-        if (c == 27) break;
-	}
-	
-	// Wait for user input
+	// Wait for end
 	waitKey(0);
-
-	if (mSprite)
-	{
-		delete mSprite;
-		mSprite = NULL;
-	}
-
 
 	return 0;
 }
@@ -398,27 +286,4 @@ void calibrate(vector<Rect>& rects, bool open)
 		mHands.getHand(Hand::RIGHT).calibrate(rects[0], open);
 		mHands.getHand(Hand::LEFT).calibrate(rects[1], open);
 	}
-}
-
-void mouseCallback(int event, int x, int y, int flags, void* userdata)
-{
-	cout << "Mouse callback: Event - " << event << ", x - " << x << ", y - " << y << ", flags - " << flags << endl;
-}
-
-void drawcallback(void* userdata)
-{
-	
-	ogl::Texture2D* pTex = static_cast<ogl::Texture2D*>(userdata);
-    if (pTex->empty())
-        return;
-
-	if (!mSprite)
-	{
-		return;
-	}
-
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	mSprite->setTexture(pTex);
-	mSprite->draw(mVPMatrix);
 }
