@@ -11,26 +11,58 @@ const int THRESH = 120;
 const int MAX_THRESH = 255;
 const int ESC_KEY = 27;
 
-Looper::Looper(Display *display, VideoCapture *videoIn, switches& args) : mDisplay(display), mVideoInput(videoIn), mArgs(args),
-	mProjMatrix(), mViewMatrix(), mVPMatrix(), mTicks(0), mSource(), mGloveColour(8, 110, 97), mImageMod(), mImageKey(),
-	mHands(), mDrawColour(0, 0, 255, 255), mProgramLogic(display)
-{
-	mTexture = new cv::ogl::Texture2D();
+Looper::Looper(Display display, VideoCapture& videoIn, const switches& args) : 
+	mDisplay(display),
+	mVideoInput(videoIn),
+	mArgs(args),
 
+	mSource(),
+	mImageKey(),
+	mImageMod(),
+
+	mViewMatrix(),
+	mProjMatrix(),
+	mVPMatrix(),
+
+#ifdef __CPP11
+	mSprite(nullptr),
+#else
+	mSprite(NULL),
+#endif
+	mTexture(new cv::ogl::Texture2D()),
+
+	mGloveColour(8, 110, 97),
+
+	mHands(),
+
+	mDrawColour(0, 0, 255, 255),
+
+	mProgramLogic(display),
+
+	mTicks(0)
+{
 	init();
 }
 
 Looper::~Looper()
 {
 	mTexture->release();
+
+#ifndef __CPP11
+	if (mSprite)
+	{
+		delete mSprite;
+		mSprite = NULL;
+	}
+#endif
 }
 
 void Looper::init()
 {
 	namedWindow(WINDOW_TITLE, CV_WINDOW_OPENGL | CV_WINDOW_AUTOSIZE);
-	resizeWindow(WINDOW_TITLE, mDisplay->getWidth(), mDisplay->getHeight());
+	resizeWindow(WINDOW_TITLE, mDisplay.getWidth(), mDisplay.getHeight());
 
-	float ratio = (float) mDisplay->getWidth() / (float) mDisplay->getHeight();
+	float ratio = (float) mDisplay.getWidth() / (float) mDisplay.getHeight();
 
 	if (ratio > 1.0f)
 	{
@@ -41,13 +73,17 @@ void Looper::init()
 		mProjMatrix.frustum(-1, 1, -1.0f / ratio, 1.0f / ratio, 1, 10);
 	}
 
-	int orth = MIN(mDisplay->getWidth(), mDisplay->getHeight());
+	int orth = MIN(mDisplay.getWidth(), mDisplay.getHeight());
 
 	mViewMatrix.ortho(-orth / 2.0f, orth / 2.0f, -orth / 2.0f, orth / 2.0f, 0.1f, 100.0f);
 
 	mVPMatrix = (mViewMatrix * mProjMatrix);
 
-	mSprite = new Sprite(mDisplay->getWidth(), mDisplay->getHeight());
+#ifdef __CPP11
+	mSprite.reset(new Sprite(mDisplay.getWidth(), mDisplay.getHeight()));
+#else
+	mSprite = new Sprite(mDisplay.getWidth(), mDisplay.getHeight());
+#endif
 	mSprite->setTexture(mTexture);
 
 	setMouseCallback(WINDOW_TITLE, onMouse, this);
@@ -56,17 +92,17 @@ void Looper::init()
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-	glViewport(0, 0, mDisplay->getWidth(), mDisplay->getHeight());
+	glViewport(0, 0, mDisplay.getWidth(), mDisplay.getHeight());
 }
 
 void Looper::loop()
 {
-	for (*mVideoInput >> mSource; mSource.data != NULL; *mVideoInput >> mSource, mTicks++)
+	for (mVideoInput >> mSource; mSource.data != NULL; mVideoInput >> mSource, mTicks++)
 	{
 		// Do stuff!
 		imgMod();
 
-		if (mArgs.mDebugDisplay)
+		if (mArgs.debugDisplay)
 		{
 			for (int i = 0; i < MAX_HANDS; i++)
 			{
@@ -134,7 +170,7 @@ void Looper::shapeDetect()
 
 void Looper::interpretImg(vector<Rect>& shapes)
 {
-	if (mArgs.mIsCamera)
+	if (mArgs.isCamera)
 	{
 
 	}
@@ -176,9 +212,7 @@ void disp::onDraw(void *data)
 	looper->mSprite->draw(looper->mVPMatrix);
 }
 
-
-
-
+#ifdef _DEBUG
 void disp::calibrate(Hands& hands, vector<Rect>& rects, bool open)
 {
 	if (rects[0].x < rects[1].x)
@@ -192,3 +226,4 @@ void disp::calibrate(Hands& hands, vector<Rect>& rects, bool open)
 		hands.getHand(Hand::LEFT).calibrate(rects[1], open);
 	}
 }
+#endif

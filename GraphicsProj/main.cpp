@@ -50,7 +50,7 @@ int main(int argc, char** argv)
 	// Read the command line arguments and set the program up as required
 	if (!interpretCommandSwitches(argc, argv))
 	{
-		return -1;
+		return EXIT_FAILURE;
 	}
 	
 	// If this is a debug build, print out the arguments
@@ -59,41 +59,38 @@ int main(int argc, char** argv)
 #endif 
 
 	VideoCapture vid;
-	if (Commands.mIsVideo)
+	if (Commands.isVideo)
 	{
 		// If a video input is requested, attempt to open it
-		vid = VideoCapture(Commands.mFilename);
+		vid = VideoCapture(Commands.filename);
 	}
-	else if (Commands.mIsCamera)
+	else if (Commands.isCamera)
 	{
 		// If a camera input is requested, attempt to open it
-		vid = VideoCapture(Commands.mCameraId);
+		vid = VideoCapture(Commands.cameraId);
 	}
 	else
 	{
 		// How did you get here???
 		cout << "w0t" << endl;
-		return -1;
+		return EXIT_FAILURE;
 	}
 
 	// If the video/camera wasn't able to be opened then quit the program.
 	if (!vid.isOpened())
 	{
 		// Print out the appropriate error message
-		cout << ((Commands.mIsCamera) ? "Camera" : "Video") << " couldn't be opened!" << endl;
-		return -1;
+		cout << ((Commands.isCamera) ? "Camera" : "Video") << " couldn't be opened!" << endl;
+		return EXIT_FAILURE;
 	}
-	
-	Size vidSize = Size((int) vid.get(CV_CAP_PROP_FRAME_WIDTH), (int) vid.get(CV_CAP_PROP_FRAME_HEIGHT));
 
-	disp::Display disp = disp::Display(vidSize.width, vidSize.height);
-	disp::Looper looper = disp::Looper(&disp, &vid, Commands);
+	disp::Looper looper(disp::Display((int) vid.get(CV_CAP_PROP_FRAME_WIDTH), (int) vid.get(CV_CAP_PROP_FRAME_HEIGHT)), vid, Commands);
 	looper.loop();
 	
 	// Wait for end
 	waitKey(0);
 
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 bool interpretCommandSwitches(int argc, char** argv)
@@ -102,8 +99,8 @@ bool interpretCommandSwitches(int argc, char** argv)
 	{
 		printUsage();
 		// Set Defaults
-		Commands.mIsCamera = true;
-		Commands.mCameraId = 0;
+		Commands.isCamera = true;
+		Commands.cameraId = 0;
 		return true;
 	}
 
@@ -113,13 +110,13 @@ bool interpretCommandSwitches(int argc, char** argv)
 
 		if (arg[0] == 'v')
 		{
-			if (!Commands.mIsVideo && !Commands.mIsCamera)
+			if (!Commands.isVideo && !Commands.isCamera)
 			{
-				Commands.mIsVideo = true;
+				Commands.isVideo = true;
 			}
-			else if (Commands.mIsVideo)
+			else if (Commands.isVideo)
 			{
-				Commands.mFilename = arg;
+				Commands.filename = arg;
 			}
 			else
 			{
@@ -129,9 +126,9 @@ bool interpretCommandSwitches(int argc, char** argv)
 		}
 		else if (arg[0] == 'c')
 		{
-			if (!Commands.mIsCamera && !Commands.mIsVideo)
+			if (!Commands.isCamera && !Commands.isVideo)
 			{
-				Commands.mIsCamera = true;
+				Commands.isCamera = true;
 			}
 			else
 			{
@@ -143,25 +140,25 @@ bool interpretCommandSwitches(int argc, char** argv)
 		{
 			if (arg.compare("-Ddisplay") == 0)
 			{
-				Commands.mDebugDisplay = true;
+				Commands.debugDisplay = true;
 			}
 		}
 		else if (arg[0] >= '0' && arg[0] <= '9')
 		{
-			if (Commands.mIsCamera)
+			if (Commands.isCamera)
 			{
-				Commands.mCameraId = atoi(argv[i]);
+				Commands.cameraId = atoi(argv[i]);
 			}
 			else
 			{
-				Commands.mFilename = arg;
+				Commands.filename = arg;
 			}
 		}
 		else
 		{
-			if (Commands.mIsVideo)
+			if (Commands.isVideo)
 			{
-				Commands.mFilename = arg;
+				Commands.filename = arg;
 			}
 			else
 			{
@@ -171,10 +168,10 @@ bool interpretCommandSwitches(int argc, char** argv)
 		}
 	}
 
-	if (!Commands.mIsCamera && !Commands.mIsVideo)
+	if (!Commands.isCamera && !Commands.isVideo)
 	{
-		Commands.mIsCamera = true;
-		Commands.mCameraId = 0;
+		Commands.isCamera = true;
+		Commands.cameraId = 0;
 	}
 
 	return true;
@@ -184,16 +181,16 @@ bool interpretCommandSwitches(int argc, char** argv)
 void debugPrintCommands()
 {
 	cout << "Command switches: " << endl;
-	if (Commands.mIsVideo)
+	if (Commands.isVideo)
 	{
-		cout << "Video input enabled" << endl << "Input file: " << Commands.mFilename << endl;
+		cout << "Video input enabled" << endl << "Input file: " << Commands.filename << endl;
 	} 
-	else if (Commands.mIsCamera)
+	else if (Commands.isCamera)
 	{
-		cout << "Camera input enabled" << endl << "Camera id: " << Commands.mCameraId << endl;
+		cout << "Camera input enabled" << endl << "Camera id: " << Commands.cameraId << endl;
 	}
 	
-	if (Commands.mDebugDisplay)
+	if (Commands.debugDisplay)
 	{
 		cout << "Debug display enabled" << endl;
 	}
@@ -209,6 +206,7 @@ void printUsage()
 			
 }
 
+/*
 void thresherShark()
 {
 	Mat threshold_output;
@@ -250,7 +248,7 @@ void thresherShark()
 		}
 	}
 
-	if (Commands.mDebugDisplay)
+	if (Commands.debugDisplay)
 	{
 		Mat drawing = src.clone();
 		for (int i = 0; i < MAX_HANDS; i++)
@@ -287,3 +285,4 @@ void calibrate(vector<Rect>& rects, bool open)
 		mHands.getHand(Hand::LEFT).calibrate(rects[1], open);
 	}
 }
+*/

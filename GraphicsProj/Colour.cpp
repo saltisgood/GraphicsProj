@@ -12,11 +12,11 @@ Colour::~Colour()
 	}
 }
 
-Scalar Colour::toScalar()
+Scalar Colour::toScalar() const
 {
 	if (!mScalar)
 	{
-		mScalar = new Scalar(B, G, R);
+		mScalar = new Scalar(mB, mG, mR);
 	}
 
 	return *mScalar;

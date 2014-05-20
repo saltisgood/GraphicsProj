@@ -14,15 +14,20 @@ namespace sGL
 	class Sprite
 	{
 	public:
-		Sprite(UINT width, UINT height);
+		Sprite(uint width, uint height);
 		~Sprite();
 
-		void setTexture(cv::Mat& img);
-		void setTexture(cv::ogl::Texture2D *tex);
 		const Program& getProgram() const { return mProgram; } 
 		GLuint getTextureId() const { return mTex->texId(); }
-
 		void draw(Matrix& vpMatrix) const;
+
+		void setTexture(const cv::Mat& img);
+
+#ifdef __CPP11
+		void setTexture(std::shared_ptr<cv::ogl::Texture2D> tex);
+#else
+		void setTexture(cv::ogl::Texture2D *tex);
+#endif
 
 	private:
 		void setupIndices();
@@ -31,13 +36,17 @@ namespace sGL
 		void setupTexRegions();
 
 		Program const mProgram;
+		uint mWidth;
+		uint mHeight;
+
+#ifdef __CPP11
+		std::shared_ptr<cv::ogl::Texture2D> mTex;
+		std::unique_ptr<Vertices> mVertices;
+#else
 		cv::ogl::Texture2D *mTex;
 		Vertices *mVertices;
-		UINT mWidth;
-		UINT mHeight;
+#endif
 	};
 }
-
-#include "Vertices.h"
 
 #endif

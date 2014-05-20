@@ -8,22 +8,18 @@ namespace proj
 	class Colour
 	{
 	public:
-		Colour(uchar r, uchar g, uchar b) : R(r), G(g), B(b)
-		{
-			mScalar = NULL;
-		}
-
+		Colour(uchar r, uchar g, uchar b) : mR(r), mG(g), mB(b), mScalar(NULL) { }
 		virtual ~Colour();
 
-		uchar getRed() const { return R; }
-		uchar getBlue() const { return B; }
-		uchar getGreen() const { return G; }
+		uchar getRed() const { return mR; }
+		uchar getBlue() const { return mB; }
+		uchar getGreen() const { return mG; }
 
-		cv::Scalar toScalar();
+		cv::Scalar toScalar() const;
 
 	protected:
-		uchar R, G, B;
-		cv::Scalar *mScalar;
+		uchar mR, mG, mB;
+		mutable cv::Scalar *mScalar;
 	};
 }
 

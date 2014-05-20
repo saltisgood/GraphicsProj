@@ -3,24 +3,21 @@
 
 #include <opencv2/core/core.hpp>
 
-#include "Util.h"
-
 namespace proj
 {
 	class Hand
 	{
 	public:
-		Hand() : mPrevX(0), mPrevY(0), mIsLeft(false), mPrevRect(), mOpenRect(), mCloseRect() {}
-		Hand(bool isLeft) : mPrevX(0), mPrevY(0), mIsLeft(isLeft), mPrevRect(), mOpenRect(), mCloseRect() {}
+		Hand(bool isLeft = false) : mPrevX(0), mPrevY(0), mIsLeft(isLeft), mPrevRect(), mOpenRect(), mCloseRect() {}
 		virtual ~Hand() {}
 
 		void calibrate(cv::Rect& rect, bool open);
-		bool checkDistance(cv::Rect& rect);
-		bool checkSize(cv::Rect&);
+		bool checkDistance(const cv::Rect& rect) const;
+		bool checkSize(const cv::Rect&) const;
 
-		cv::Rect& getClosedRect() { return mCloseRect; }
-		cv::Rect& getOpenRect() { return mOpenRect; }
-		cv::Rect& getPrevRect() { return mPrevRect; }
+		const cv::Rect& getClosedRect() const { return mCloseRect; }
+		const cv::Rect& getOpenRect() const { return mOpenRect; }
+		const cv::Rect& getPrevRect() const { return mPrevRect; }
 		void setClosedRect(cv::Rect& closedRect) { mCloseRect = closedRect; }
 		void setOpenRect(cv::Rect& openRect) { mOpenRect = openRect; }
 		void setPrevRect(cv::Rect& prevRect) { mPrevRect = prevRect; }

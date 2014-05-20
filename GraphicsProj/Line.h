@@ -14,7 +14,7 @@ namespace proj
 		virtual ~Line() { }
 		
 		void addPoint(cv::Point point) { mPoints.push_back(point); }
-		int getLineNumbers() { return (int)mPoints.size() - 1; }
+		int getLineNumbers() const { return (int)mPoints.size() - 1; }
 		cv::Point getCurrentPoint() { return *mPointIter; }
 		cv::Point getNextPoint() { return *(++mPointIter); }
 		void resetListIter() { mPointIter = mPoints.begin(); }

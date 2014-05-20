@@ -35,11 +35,15 @@ namespace sGL
 		GLuint mFragShaderHandle;
 	};
 
-	GLuint createProgram(GLuint vertexShader, GLuint fragShader, GLuint count, const GLchar** names);
+	GLuint createProgram(GLuint vertexShader, GLuint fragShader, GLuint count = 0, const GLchar** names = 
+#ifdef __CPP11
+		nullptr
+#else
+		NULL
+#endif
+		);
 	GLuint loadShader(GLenum type, const GLchar* code);
-	void checkGLError(std::string function);
-
-	
+	void checkGLError(const std::string& function);
 }
 
 #endif

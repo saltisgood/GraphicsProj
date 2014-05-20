@@ -6,7 +6,7 @@ using namespace proj;
 using namespace cv;
 using namespace std;
 
-void proj::chromaKey(Mat& img, Colour& colour)
+void proj::chromaKey(Mat& img, const Colour& colour)
 {
 	if (!img.data)
 	{
@@ -58,7 +58,7 @@ void proj::blur(Mat& img, uint passes)
 }
 */
 
-vector<Rect> proj::sortRect(vector<Rect>& arr, int maxsort)
+vector<Rect> proj::sortRect(const vector<Rect>& arr, int maxsort)
 {
 	int arrSize = (int)arr.size();
 	if (arrSize < maxsort)
@@ -106,12 +106,12 @@ vector<Rect> proj::sortRect(vector<Rect>& arr, int maxsort)
 	return out;
 }
 
-Point proj::centreRect(Rect& rect)
+Point proj::centreRect(const Rect& rect)
 {
 	return Point(rect.x + (rect.width / 2), rect.y + (rect.height / 2));
 }
 
-int proj::distDiff(Point x, Point y)
+int proj::distDiff(const Point& x, const Point& y)
 {
 	return (int)sqrt(pow(abs(y.x - x.x), 2) + pow(abs(x.y - y.y), 2));
 }

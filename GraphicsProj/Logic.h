@@ -12,14 +12,14 @@ namespace proj
 	class Logic
 	{
 	public:
-		Logic(disp::Display* display);
+		Logic(const disp::Display& display);
 
 		bool isCalibrated() const { return mIsCalibrated; }
 
 		void drawAnything(cv::Mat& img);
 	private:
 		bool mIsCalibrated;
-		disp::Display *mDisplay;
+		const disp::Display& mDisplay;
 		Colour mTextColour;
 	};
 }

@@ -24,7 +24,7 @@ Program::~Program()
 	checkGLError("glDeleteProgram");
 }
 
-GLuint sGL::createProgram(GLuint vertexShader, GLuint fragShader, GLuint count = 0, const GLchar** names = NULL)
+GLuint sGL::createProgram(GLuint vertexShader, GLuint fragShader, GLuint count, const GLchar** names)
 {
 	GLuint program = glCreateProgram();
 
@@ -101,7 +101,7 @@ GLuint sGL::loadShader(GLenum type, const GLchar* code)
 	return shader;
 }
 
-void sGL::checkGLError(string function)
+void sGL::checkGLError(const string& function)
 {
 	GLenum error;
 	if ((error = glGetError()) != GL_NO_ERROR)

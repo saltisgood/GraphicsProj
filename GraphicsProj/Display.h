@@ -7,7 +7,7 @@ namespace disp
 	{
 	public:
 		Display(int width, int height) : mWindowWidth(width), mWindowHeight(height) {}
-		~Display() {}
+		virtual ~Display() {}
 
 		int getWidth() const { return mWindowWidth; }
 		int getHeight() const { return mWindowHeight; }

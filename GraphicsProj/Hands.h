@@ -24,8 +24,8 @@ namespace proj
 
 		void setHandRect(int hand, cv::Rect& pos) { mHands[hand].setPrevRect(pos); }
 		bool updateHands(cv::vector<cv::Rect>& hands);
-		cv::Rect& getPrevRect(int hand) { return mHands[hand].getPrevRect(); }
-		Line& getLine(int hand) { return mLines[hand]; }
+		const cv::Rect& getPrevRect(int hand) const { return mHands[hand].getPrevRect(); }
+		const Line& getLine(int hand) const { return mLines[hand]; }
 
 	private:
 		Hand mHands[2];

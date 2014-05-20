@@ -2,31 +2,52 @@
 #define MATRIX_H_
 
 #include <iostream>
+#include <memory>
+#include "Util.h"
 
 namespace sGL
 {
-	const int MAT4 = 16;
+	const int MAT4_W = 4;
+	const int MAT4_H = 4;
+	const int MAT4 = MAT4_W * MAT4_H;
 
 	class Matrix
 	{
+		friend std::ostream& operator<<(std::ostream&, const Matrix&);
+
 	public:
 		Matrix();
 		~Matrix();
 
 		void setIdentity();
 		void translate(float x, float y, float z);
-		void frustum(float left, float right, float bottom, float top, float pNear, float pFar);
-		void ortho(float left, float right, float bottom, float top, float pNear, float pFar);
-		float* getPointer() const { return mArray; }
+		void frustum(float left, float right, float bottom, float top, float near, float far);
+		void ortho(float left, float right, float bottom, float top, float near, float far);
 
-		float& operator[](int x);
-		void operator=(Matrix&);
+		float * getPointer() const 
+		{ 
+			return mArray
+#ifdef __CPP11
+			.get() 
+#endif
+			;
+		}
+
+		float& operator[](uchar x);
+		void operator=(const Matrix&);
+		Matrix& operator*(const Matrix&) const;
+
 	private:
-		float *mArray;
+
+#ifdef __CPP11
+		const std::unique_ptr<float[]> mArray;
+#else
+		float * const mArray;
+#endif
+		
 	};
 
-	Matrix& operator*(Matrix&, Matrix&);
-	std::ostream& operator<<(std::ostream&, Matrix&);
+	std::ostream& operator<<(std::ostream&, const Matrix&);
 }
 
 #endif

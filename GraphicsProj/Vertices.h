@@ -16,18 +16,40 @@ namespace sGL
 	class Vertices
 	{
 	public:
-		Vertices(Sprite* sprite, GLsizei numVertices, GLsizei numIndices, GLenum primitives);
+		Vertices(const Sprite& sprite, GLsizei numVertices, GLsizei numIndices, GLenum primitives);
 		~Vertices();
 
 		void draw(Matrix& mvpMatrix);
-		void setIndicesBuffer(unsigned short* buff);
-		void setTexCoords(float* buff);
-		void setVertices(float *buff);
+
+		void setIndicesBuffer(
+#ifdef __CPP11
+			std::unique_ptr<ushort[]>
+#else
+			ushort *
+#endif
+			);
+		
+		void setTexCoords(
+#ifdef __CPP11
+			std::unique_ptr<float[]>
+#else
+			float *
+#endif
+			);
+
+		void setVertices(
+#ifdef __CPP11
+			std::unique_ptr<float[]>
+#else
+			float *
+#endif
+			buff);
+
 	private:
 		void bind(Matrix& mvpMatrix);
 
-		Sprite * const mShape;
-		Program const& mProgram;
+		const Sprite& mShape;
+		const Program& mProgram;
 
 		const bool mUsesColour;
 		const bool mUsesTexture;
@@ -35,20 +57,37 @@ namespace sGL
 		const bool mUsesMVPIndex;
 		const bool mUsesAlpha;
 
-		GLuint mPositionHandle;
-		GLuint mTexCoordHandle;
-		
 		const GLint mPositionCount;
-		const GLsizei mVertexSize;
 		const GLint mVertexStride;
+		const GLsizei mVertexSize;
 
 		const GLenum mPrimitiveType;
 		const GLsizei mIndicesCount;
 		const GLsizei mVerticesCount;
 
-		float* mVertexBuffer;
-		float *mTexCoordsBuffer;
-		unsigned short *mIndicesBuffer;
+		GLuint mPositionHandle;
+		GLuint mTexCoordHandle;
+
+#ifdef __CPP11
+		std::unique_ptr<float[]>
+#else
+		float *
+#endif
+		mVertexBuffer;
+
+#ifdef __CPP11
+		std::unique_ptr<float[]>
+#else
+		float *
+#endif
+		mTexCoordsBuffer;
+
+#ifdef __CPP11
+		std::unique_ptr<ushort[]>
+#else
+		ushort *
+#endif
+		mIndicesBuffer;
 	};
 }
 

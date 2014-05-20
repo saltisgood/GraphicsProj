@@ -16,8 +16,8 @@ namespace disp
 	class Looper
 	{
 	public:
-		Looper(Display *disp, cv::VideoCapture *vidIn, proj::switches& args);
-		~Looper();
+		Looper(Display disp, cv::VideoCapture& vidIn, const proj::switches& args);
+		virtual ~Looper();
 
 		void loop();
 	private:
@@ -26,21 +26,31 @@ namespace disp
 		void shapeDetect();
 		void interpretImg(cv::vector<cv::Rect>& shapes);
 
-		Display * const mDisplay;
-		cv::VideoCapture * const mVideoInput;
-		proj::switches const& mArgs;
+		Display mDisplay;
+		cv::VideoCapture& mVideoInput;
+		const proj::switches& mArgs;
 
 		cv::Mat mSource;
 		cv::Mat mImageKey;
 		cv::Mat mImageMod;
 
-		sGL::Matrix mProjMatrix;
 		sGL::Matrix mViewMatrix;
+		sGL::Matrix mProjMatrix;
 		sGL::Matrix mVPMatrix;
 
-		sGL::Sprite *mSprite;
+#ifdef __CPP11
+		std::shared_ptr<sGL::Sprite>
+#else
+		sGL::Sprite *
+#endif
+		mSprite;
 
-		cv::ogl::Texture2D *mTexture;
+#ifdef __CPP11
+		std::shared_ptr<cv::ogl::Texture2D>
+#else
+		cv::ogl::Texture2D *
+#endif
+		mTexture;
 
 		proj::Colour mGloveColour;
 
@@ -60,8 +70,9 @@ namespace disp
 	void onDraw(void *data);
 
 
-	// DEBUG ONLY!
+#ifdef _DEBUG
 	void calibrate(proj::Hands&, cv::vector<cv::Rect>&, bool);
+#endif
 }
 
 #endif

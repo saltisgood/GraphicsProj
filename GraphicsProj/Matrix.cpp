@@ -3,30 +3,34 @@
 using namespace sGL;
 using namespace std;
 
-Matrix sTemp = Matrix();
+Matrix sTemp;
 
-Matrix::Matrix()
+Matrix::Matrix() : mArray(new float[MAT4])
 {
-	mArray = new float[MAT4];
-
 	setIdentity();
 }
 
 Matrix::~Matrix()
 {
+#ifndef __CPP11
 	delete[] mArray;
+#endif
 }
+
+#ifdef __CPP11
+#define mArray mArray.get()
+#endif
 
 void Matrix::setIdentity()
 {
 	for (int i = 0; i < MAT4; i++)
 	{
-		mArray[i] = 0;
+		mArray[i] = 0.f;
 	}
 
 	for (int i = 0; i < MAT4; i += 5)
 	{
-		mArray[i] = 1.0f;
+		mArray[i] = 1.f;
 	}
 }
 
@@ -38,67 +42,42 @@ void Matrix::translate(float x, float y, float z)
 	}
 }
 
-float& Matrix::operator[](int x)
-{
-	return mArray[x];
-}
-
-Matrix& sGL::operator*(Matrix& m1, Matrix& m2)
-{
-	for (int x = 0; x < 4; x++)
-	{
-		for (int y = 0; y < 4; y++)
-		{
-			float tmp = 0.0f;
-
-			for (int i = 0; i < 4; i++)
-			{
-				tmp += m1[(4 * y) + i] * m2[x + (4 * i)];
-			}
-
-			sTemp[(4 * y) + x] = tmp;
-		}
-	}
-
-	return sTemp;
-}
-
 void Matrix::frustum(float left, float right, float bottom, float top, float near, float far)
 {
-	if (left == right || top == bottom || near == far || near <= 0.0f || far <= 0.0f)
+	if (left == right || top == bottom || near == far || near <= 0.f || far <= 0.f)
 	{
 		//Error
-		return;
+		throw std::runtime_error("Invalid parameters to Matrix::frustum(...)!!!");
 	}
 
-	float r_width = 1.0f / (right - left);
-	float r_height = 1.0f / (top - bottom);
-	float r_depth = 1.0f / (near - far);
+	float r_width = 1.f / (right - left);
+	float r_height = 1.f / (top - bottom);
+	float r_depth = 1.f / (near - far);
 	
-	float x = 2.0f * (near * r_width);
-	float y = 2.0f * (near * r_height);
+	float x = 2.f * (near * r_width);
+	float y = 2.f * (near * r_height);
 
 	float A = (right + left) * r_width;
 	float B = (top + bottom) * r_height;
 	float C = (far + near) * r_depth;
-	float D = 2.0f * (far * near * r_depth);
+	float D = 2.f * (far * near * r_depth);
 
 	mArray[0] = x;
-	mArray[1] = 0.0f;
-	mArray[2] = 0.0f;
-	mArray[3] = 0.0f;
-	mArray[4] = 0.0f;
+	mArray[1] = 0.f;
+	mArray[2] = 0.f;
+	mArray[3] = 0.f;
+	mArray[4] = 0.f;
 	mArray[5] = y;
-	mArray[6] = 0.0f;
-	mArray[7] = 0.0f;
+	mArray[6] = 0.f;
+	mArray[7] = 0.f;
 	mArray[8] = A;
 	mArray[9] = B;
 	mArray[10] = C;
-	mArray[11] = -1.0f;
-	mArray[12] = 0.0f;
-	mArray[13] = 0.0f;
+	mArray[11] = -1.f;
+	mArray[12] = 0.f;
+	mArray[13] = 0.f;
 	mArray[14] = D;
-	mArray[15] = 0.0f;
+	mArray[15] = 0.f;
 }
 
 void Matrix::ortho(float left, float right, float bottom, float top, float near, float far)
@@ -139,7 +118,16 @@ void Matrix::ortho(float left, float right, float bottom, float top, float near,
 	mArray[15] = 1.0f;
 }
 
-void Matrix::operator=(Matrix& m1)
+float& Matrix::operator[](uchar x)
+{
+	if (x < MAT4)
+	{
+		return mArray[x];
+	}
+	throw std::overflow_error("Parameter to Matrix::operator[] outside acceptable range!");
+}
+
+void Matrix::operator=(const Matrix& m1)
 {
 	if (this == &m1)
 	{
@@ -153,14 +141,39 @@ void Matrix::operator=(Matrix& m1)
 	}
 }
 
-ostream& sGL::operator<<(ostream& stream, Matrix& mat)
+ostream& sGL::operator<<(ostream& stream, const Matrix& mat)
 {
 	stream << "{ " << endl;
-	for (int y = 0; y < 4; y++)
+	for (int y = 0; y < MAT4_H; y++)
 	{
-		stream << "{ " << mat[(4 * y) + 0] << ", " << mat[(4 * y) + 1] << ", " << mat[(4 * y) + 2] << ", " << mat[(4 * y) + 3] << "}, " << endl;
+		stream << "{ " << mat.mArray[(4 * y) + 0] << ", " << mat.mArray[(4 * y) + 1] << ", " << mat.mArray[(4 * y) + 2] << ", " << mat.mArray[(4 * y) + 3] << "}, " << endl;
 	}
 	stream << "}" << endl;
 
 	return stream;
+}
+
+Matrix& Matrix::operator*(const Matrix& m2) const
+{
+	if (this == &sTemp || &m2 == &sTemp)
+	{
+		sTemp = Matrix();
+	}
+
+	for (uchar x = 0; x < MAT4_W; x++)
+	{
+		for (uchar y = 0; y < MAT4_H; y++)
+		{
+			float tmp = 0.0f;
+
+			for (uchar i = 0; i < 4; i++)
+			{
+				tmp += mArray[(4 * y) + i] * m2.mArray[x + (4 * i)];
+			}
+
+			sTemp[(4 * y) + x] = tmp;
+		}
+	}
+
+	return sTemp;
 }
