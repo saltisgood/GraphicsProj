@@ -6,6 +6,126 @@ using namespace proj;
 using namespace cv;
 using namespace std;
 
+#define max(x, y) ((x > y) ? x : y)
+
+template<typename T>
+void blueDiff(const Mat& img, Mat& mod, int rows, int cols, int channels)
+{
+	CV_DbgAssert(channels >= 3);
+
+	cols *= channels;
+
+	for (int i = 0; i < rows; i++)
+	{
+		const T* p = img.ptr<T>(i);
+		T* q = mod.ptr<T>(i);
+
+		for (int j = 0; j < cols; j += channels)
+		{
+			if (p[j] > p[j + 1])
+			{
+				q[j] = p[j + 1];
+			}
+		}
+	}
+}
+
+template<typename T>
+void greenDiff(const Mat& img, Mat& mod, int rows, int cols, int channels)
+{
+	CV_DbgAssert(channels >= 3);
+
+	cols *= channels;
+
+	for (int i = 0; i < rows; i++)
+	{
+		const T* p = img.ptr<T>(i);
+		T* q = mod.ptr<T>(i);
+
+		for (int j = 0; j < cols; j += channels)
+		{
+			if (p[j + 1] > p[j])
+			{
+				q[j + 1] = p[j];
+			}
+		}
+	}
+}
+
+template<typename T>
+void blueMask(const Mat& img, Mat& mask, int rows, int cols, int channels)
+{
+	CV_DbgAssert(channels >= 3);
+
+	cols *= channels;
+
+	for (int i = 0; i < rows; i++)
+	{
+		const T* p = img.ptr<T>(i);
+		T* q = mask.ptr<T>(i);
+
+		for (int j = 0, k = 0; j < cols; j += channels, k++)
+		{
+			T mx = max(p[j + 1], p[j + 2]);
+			q[k] = (mx > p[j]) ? 0 : p[j] - mx;
+		}
+	}
+}
+
+template<typename T>
+void greenMask(const Mat& img, Mat& mask, int rows, int cols, int channels)
+{
+	CV_DbgAssert(channels >= 3);
+
+	cols *= channels;
+
+	for (int i = 0; i < rows; i++)
+	{
+		const T* p = img.ptr<T>(i);
+		T* q = mask.ptr<T>(i);
+
+		for (int j = 0, k = 0; j < cols; j += channels, k++)
+		{
+			T mx = max(p[j], p[j + 2]);
+			q[k] = (mx > p[j + 1]) ? 0 : p[j + 1] - mx;
+		}
+	}
+}
+
+void proj::rgbKey(Mat& img, char colour)
+{
+	if (!img.data)
+	{
+		return;
+	}
+
+	int channels = img.channels();
+
+	int nRows = img.rows;
+	int nCols = img.cols;
+
+	Mat imgmod = img.clone();
+	Mat msk(nRows, nCols, CV_8UC1);
+
+	switch (colour)
+	{
+	case BLUE:
+		blueDiff<uchar>(img, imgmod, nRows, nCols, channels);
+		blueMask<uchar>(img, msk, nRows, nCols, channels);
+		break;
+	case GREEN:
+		greenDiff<uchar>(img, imgmod, nRows, nCols, channels);
+		greenMask<uchar>(img, msk, nRows, nCols, channels);
+		break;
+	default:
+		return;
+	}
+
+	invert<uchar>(msk, 255);
+
+	mask<uchar>(imgmod, img, msk, 255);
+}
+
 void proj::chromaKey(Mat& img, const Colour& colour)
 {
 	if (!img.data)
@@ -57,6 +177,68 @@ void proj::blur(Mat& img, uint passes)
 	}
 }
 */
+
+template<typename T>
+void proj::invert(Mat& img, T max)
+{
+	int channels = img.channels();
+
+	int nRows = img.rows;
+	int nCols = img.cols * channels;
+
+	if (img.isContinuous())
+	{
+		nCols *= nRows;
+		nRows = 1;
+	}
+
+	for (int i = 0; i < nRows; i++)
+	{
+		T *p = img.ptr<T>(i);
+
+		for (int j = 0; j < nCols; j += channels)
+		{
+			p[j] = max - p[j];
+		}
+	}
+}
+
+template<typename T>
+void proj::mask(const Mat& img, Mat& out, const Mat& mask, T max)
+{
+	CV_DbgAssert(img.depth() == mask.depth() && out.depth() == img.depth());
+	CV_DbgAssert(img.channels() == out.channels());
+	CV_DbgAssert(mask.channels() == 1);
+
+	int nCols = img.cols;
+	int nRows = img.rows;
+
+	int mkCols = mask.cols;
+	int mkRows = mask.rows;
+
+	CV_DbgAssert(nCols == mkCols && nRows == mkRows && nCols == out.cols && nRows == out.rows);
+
+	int channels = img.channels();
+
+	//nCols *= channels;
+
+	for (int i = 0; i < nRows; i++)
+	{
+		const T *p = img.ptr<T>(i);
+		const T *q = mask.ptr<T>(i);
+		T *o = out.ptr<T>(i);
+
+		for (int k = 0; k < nCols; k++)
+		{
+			for (int j = 0; j < channels; j++)
+			{
+				int index = (k * channels) + j;
+				int val = p[index] * q[k] / max;
+				o[(k * channels) + j] = (T)val;
+			}
+		}
+	}
+}
 
 vector<Rect> proj::sortRect(const vector<Rect>& arr, int maxsort)
 {

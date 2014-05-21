@@ -28,7 +28,20 @@ namespace proj
 
 	const uchar MAX_DIFF = 60;
 
+	const char GREEN = 1;
+	const char BLUE = 2;
+
 	void chromaKey(cv::Mat& img, const Colour& colour);
+
+	void greenKey(cv::Mat& img);
+
+	void rgbKey(cv::Mat& img, char colour);
+
+	template<typename T>
+	void invert(cv::Mat&, T);
+
+	template<typename T>
+	void mask(const cv::Mat&, cv::Mat&, const cv::Mat&, T);
 
 	void blur(cv::Mat& img, uint passes = 1);
 

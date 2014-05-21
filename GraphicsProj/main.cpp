@@ -1,52 +1,27 @@
 #include <iostream>
 
 #include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/core/opengl_interop.hpp>
-
-#include <GL/GLee.h>
-
-#ifdef WIN32
-#include <Windows.h>
-#include <gl/GL.h>
-#endif
 
 #include "Util.h"
-#include "Hands.h"
-#include "Matrix.h"
-#include "Sprite.h"
 #include "Looper.h"
 
 using namespace cv;
 using namespace std;
 using namespace proj;
-using namespace sGL;
-
-const int THRESH = 120;
-const int MAX_THRESH = 255;
-const string WINDOW_TITLE = "Nick's Graphics Project";
-
-int tickCount = 0;
-
-Mat src; Mat src_gray; Mat src_key;
-Scalar mRed(0, 0, 255, 255);
-Hands mHands = Hands();
 
 switches Commands = switches();
 
-void thresherShark();
-void calibrate(vector<Rect>&, bool);
 bool interpretCommandSwitches(int, char**);
 void printUsage();
 
 #ifdef _DEBUG
 void debugPrintCommands();
+void modImg(const std::string&);
 #endif
 
 // Main function. Entry point to the program.
 int main(int argc, char** argv)
 {
-	
 	// Read the command line arguments and set the program up as required
 	if (!interpretCommandSwitches(argc, argv))
 	{
@@ -195,6 +170,18 @@ void debugPrintCommands()
 		cout << "Debug display enabled" << endl;
 	}
 }
+
+#include <opencv2\core\core.hpp>
+
+void modImg(const std::string& filename)
+{
+	cv::Mat img;
+	img = imread(filename);
+
+	//greenKey(img);
+	rgbKey(img, GREEN);
+}
+
 #endif
 
 void printUsage()
@@ -205,84 +192,3 @@ void printUsage()
 			"Options: " << "-Ddisplay: Display the debug drawing overlay" << endl;
 			
 }
-
-/*
-void thresherShark()
-{
-	Mat threshold_output;
-	vector<vector<Point> > contours;
-	vector<Vec4i> hierarchy;
-	
-	// Detecte edges using Threshold
-	threshold(src_gray, threshold_output, THRESH, MAX_THRESH, THRESH_BINARY);
-	// Find contours
-	findContours(threshold_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
-
-	// Approximate contours to polygons + get bounding rects and circles
-	vector<vector<Point> > contours_poly(contours.size());
-	vector<Rect> boundRect(contours.size());
-
-	for (int i = 0; i < contours.size(); i++)
-	{
-		approxPolyDP(Mat(contours[i]), contours_poly[i], 3, true);
-		boundRect[i] = boundingRect(Mat(contours_poly[i]));
-	}
-
-	vector<Rect> sortedHands = sortRect(boundRect, 5);
-
-	if (tickCount == 0)
-	{
-		calibrate(sortedHands, true);
-	}
-	else if (tickCount == 124)
-	{
-		calibrate(sortedHands, false);
-	}
-	else if (tickCount > 124)
-	{
-		if (!mHands.updateHands(sortedHands))
-		{
-#ifdef _DEBUG
-			cout << "Blerghhhh! Errorrr on frame " << tickCount << endl;
-#endif
-		}
-	}
-
-	if (Commands.debugDisplay)
-	{
-		Mat drawing = src.clone();
-		for (int i = 0; i < MAX_HANDS; i++)
-		{
-			rectangle(drawing, mHands.getPrevRect(i).tl(), mHands.getPrevRect(i).br(), mRed, 2, 8, 0);
-
-			Line ln = mHands.getLine(i);
-			ln.resetListIter();
-			for (int j = 0; j < ln.getLineNumbers(); j++)
-			{
-				Point curr = ln.getCurrentPoint();
-				Point next = ln.getNextPoint();
-				line(drawing, curr, next, mRed, 3);
-			}
-		}
-		//imshow(WINDOW_TITLE, drawing );
-	}
-	else
-	{
-		//imshow(WINDOW_TITLE, src);
-	}
-}
-
-void calibrate(vector<Rect>& rects, bool open)
-{
-	if (rects[0].x < rects[1].x)
-	{
-		mHands.getHand(Hand::LEFT).calibrate(rects[0], open);
-		mHands.getHand(Hand::RIGHT).calibrate(rects[1], open);
-	}
-	else
-	{
-		mHands.getHand(Hand::RIGHT).calibrate(rects[0], open);
-		mHands.getHand(Hand::LEFT).calibrate(rects[1], open);
-	}
-}
-*/
