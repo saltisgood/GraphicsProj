@@ -9,11 +9,16 @@ using namespace std;
 #define max(x, y) ((x > y) ? x : y)
 
 template<typename T>
-void blueDiff(const Mat& img, Mat& mod, int rows, int cols, int channels)
+void blueDiff(const Mat& img, Mat& mod)
 {
-	CV_DbgAssert(channels >= 3);
+	int channels = img.channels();
+	int rows = img.rows;
+	int cols = img.cols * channels;
 
-	cols *= channels;
+	CV_DbgAssert(channels >= 3);
+	CV_DbgAssert(img.depth() == mod.depth());
+	CV_DbgAssert(img.channels() == mod.channels());
+	CV_DbgAssert(img.cols == mod.cols && img.rows == mod.rows);
 
 	for (int i = 0; i < rows; i++)
 	{
@@ -31,11 +36,16 @@ void blueDiff(const Mat& img, Mat& mod, int rows, int cols, int channels)
 }
 
 template<typename T>
-void greenDiff(const Mat& img, Mat& mod, int rows, int cols, int channels)
+void greenDiff(const Mat& img, Mat& mod)
 {
-	CV_DbgAssert(channels >= 3);
+	int channels = img.channels();
+	int rows = img.rows;
+	int cols = img.cols * channels;
 
-	cols *= channels;
+	CV_DbgAssert(channels >= 3);
+	CV_DbgAssert(img.depth() == mod.depth());
+	CV_DbgAssert(img.channels() == mod.channels());
+	CV_DbgAssert(img.cols == mod.cols && img.rows == mod.rows);
 
 	for (int i = 0; i < rows; i++)
 	{
@@ -53,11 +63,16 @@ void greenDiff(const Mat& img, Mat& mod, int rows, int cols, int channels)
 }
 
 template<typename T>
-void blueMask(const Mat& img, Mat& mask, int rows, int cols, int channels)
+void blueMask(const Mat& img, Mat& mask)
 {
-	CV_DbgAssert(channels >= 3);
+	int channels = img.channels();
+	int rows = img.rows;
+	int cols = img.cols * channels;
 
-	cols *= channels;
+	CV_DbgAssert(channels >= 3);
+	CV_DbgAssert(rows == mask.rows && cols == mask.cols);
+	CV_DbgAssert(mask.channels() == 1);
+	CV_DbgAssert(img.depth() == mask.depth());
 
 	for (int i = 0; i < rows; i++)
 	{
@@ -73,11 +88,16 @@ void blueMask(const Mat& img, Mat& mask, int rows, int cols, int channels)
 }
 
 template<typename T>
-void greenMask(const Mat& img, Mat& mask, int rows, int cols, int channels)
+void greenMask(const Mat& img, Mat& mask)
 {
-	CV_DbgAssert(channels >= 3);
+	int channels = img.channels();
+	int rows = img.rows;
+	int cols = img.cols * channels;
 
-	cols *= channels;
+	CV_DbgAssert(channels >= 3);
+	CV_DbgAssert(rows == mask.rows && cols == mask.cols);
+	CV_DbgAssert(mask.channels() == 1);
+	CV_DbgAssert(img.depth() == mask.depth());
 
 	for (int i = 0; i < rows; i++)
 	{
@@ -99,23 +119,18 @@ void proj::rgbKey(Mat& img, char colour)
 		return;
 	}
 
-	int channels = img.channels();
-
-	int nRows = img.rows;
-	int nCols = img.cols;
-
 	Mat imgmod = img.clone();
-	Mat msk(nRows, nCols, CV_8UC1);
+	Mat msk(img.rows, img.cols, CV_8UC1);
 
 	switch (colour)
 	{
 	case BLUE:
-		blueDiff<uchar>(img, imgmod, nRows, nCols, channels);
-		blueMask<uchar>(img, msk, nRows, nCols, channels);
+		blueDiff<uchar>(img, imgmod);
+		blueMask<uchar>(img, msk);
 		break;
 	case GREEN:
-		greenDiff<uchar>(img, imgmod, nRows, nCols, channels);
-		greenMask<uchar>(img, msk, nRows, nCols, channels);
+		greenDiff<uchar>(img, imgmod);
+		greenMask<uchar>(img, msk);
 		break;
 	default:
 		return;
