@@ -66,10 +66,6 @@ namespace disp
 		friend void onDraw(void *data);
 	};
 
-	void onMouse(int event, int x, int y, int flags, void *data);
-	void onDraw(void *data);
-
-
 #ifdef _DEBUG
 	void calibrate(proj::Hands&, cv::vector<cv::Rect>&, bool);
 #endif

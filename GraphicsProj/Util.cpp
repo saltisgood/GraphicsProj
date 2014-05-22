@@ -119,26 +119,49 @@ void proj::rgbKey(Mat& img, char colour)
 		return;
 	}
 
+	Mat msk;
+	rgbKey(img, msk, colour);
+}
+
+void proj::rgbKey(const Mat& img, Mat& _mask, char colour, bool invert)
+{
+	Mat mod = img;
+	rgbKey(mod, _mask, colour, invert);
+}
+
+void proj::rgbKey(Mat& img, Mat& _mask, char colour, bool _invert, bool _DoMask)
+{
+	if (!img.data)
+	{
+		return;
+	}
+
 	Mat imgmod = img.clone();
-	Mat msk(img.rows, img.cols, CV_8UC1);
+	_mask.create(img.rows, img.cols, CV_8UC1);
 
 	switch (colour)
 	{
 	case BLUE:
 		blueDiff<uchar>(img, imgmod);
-		blueMask<uchar>(img, msk);
+		blueMask<uchar>(img, _mask);
 		break;
 	case GREEN:
 		greenDiff<uchar>(img, imgmod);
-		greenMask<uchar>(img, msk);
+		greenMask<uchar>(img, _mask);
 		break;
 	default:
 		return;
 	}
 
-	invert<uchar>(msk, 255);
+	if (_invert)
+	{
+		invert<uchar>(_mask, 255);
 
-	mask<uchar>(imgmod, img, msk, 255);
+		if (_DoMask)
+		{
+			mask<uchar>(imgmod, img, _mask, 255);
+		}
+	}
 }
 
 void proj::chromaKey(Mat& img, const Colour& colour)

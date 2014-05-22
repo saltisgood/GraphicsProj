@@ -36,6 +36,8 @@ namespace proj
 	void greenKey(cv::Mat& img);
 
 	void rgbKey(cv::Mat& img, char colour);
+	void rgbKey(cv::Mat& img, cv::Mat& outMask, char colour, bool invert = true, bool mask = true);
+	void rgbKey(const cv::Mat& img, cv::Mat& outMask, char colour, bool invert = true);
 
 	template<typename T>
 	void invert(cv::Mat&, T);
