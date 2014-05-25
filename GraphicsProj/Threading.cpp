@@ -3,7 +3,7 @@
 using namespace perf;
 using namespace std;
 
-#define THREAD_NUM 8
+#define THREAD_NUM 4
 
 #ifdef __CPP11
 
@@ -54,6 +54,7 @@ void ThreadPool::wait(uchar threadNum)
 
 		//mCondition.wait<bool (perf::ThreadPool::*)() const>(ulck, &perf::ThreadPool::isWorkAvailable);
 		mCondition.wait(ulck, [&work]() { return work; });
+		ulck.unlock();
 		//mCondition.wait(ulck, isWorkAvailable);
 
 		if (mThreadExit)

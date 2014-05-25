@@ -14,6 +14,8 @@ namespace proj
 		void forceBackground(const cv::Mat& newBg);
 		void extractForeground(cv::Mat&);
 
+		void test(int, cv::Mat*);
+
 	private:
 		cv::Mat mBg;
 		mutable int mFramesSinceBG;

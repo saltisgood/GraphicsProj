@@ -148,7 +148,7 @@ void Looper::imgMod()
 	// Copy source image
 	mImageKey = mSource.clone();
 	//Remove background
-	//mBG.extractForeground(mImageKey);
+	mBG.extractForeground(mImageKey);
 	//mBG.extractForeground(mSource);
 	//return;
 	// Extract colour
