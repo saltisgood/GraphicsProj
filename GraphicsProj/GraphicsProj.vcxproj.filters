@@ -31,6 +31,12 @@
     <Filter Include="Header Files\Proj">
       <UniqueIdentifier>{24574aea-9f39-4de3-b120-95b988774065}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Performance">
+      <UniqueIdentifier>{2d386091-9249-4d14-9e91-951b7e467c27}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Performance">
+      <UniqueIdentifier>{e12c7981-9873-4d47-b646-ec3acabc14b7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -71,6 +77,9 @@
     </ClCompile>
     <ClCompile Include="BGround.cpp">
       <Filter>Source Files\Proj</Filter>
+    </ClCompile>
+    <ClCompile Include="Threading.cpp">
+      <Filter>Source Files\Performance</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -115,6 +124,9 @@
     </ClInclude>
     <ClInclude Include="BGround.h">
       <Filter>Header Files\Proj</Filter>
+    </ClInclude>
+    <ClInclude Include="Threading.h">
+      <Filter>Header Files\Performance</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

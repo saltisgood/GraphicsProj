@@ -9,6 +9,8 @@ using namespace std;
 
 #include <mutex>
 
+ThreadPool * ThreadPool::sInstance = new ThreadPool();
+
 ThreadPool::ThreadPool() : 
 	mThreadNum(THREAD_NUM),
 	mThreads(),
@@ -26,7 +28,7 @@ ThreadPool::ThreadPool() :
 {
 	for (uchar i = 0; i < mThreadNum; i++)
 	{
-		mThreads.push_back(thread(wait, i));
+		mThreads.push_back(thread(&perf::ThreadPool::wait, this, i));
 	}
 }
 
@@ -40,6 +42,7 @@ ThreadPool::~ThreadPool()
 void ThreadPool::wait(uchar threadNum)
 {
 	unique_lock<mutex> ulck(mMutex, defer_lock);
+	bool& work = mWorkAvailable;
 
 	while (!mThreadExit)
 	{
@@ -49,7 +52,9 @@ void ThreadPool::wait(uchar threadNum)
 
 		mAtomicCount++;
 
-		mCondition.wait(ulck, isWorkAvailable);
+		//mCondition.wait<bool (perf::ThreadPool::*)() const>(ulck, &perf::ThreadPool::isWorkAvailable);
+		mCondition.wait(ulck, [&work]() { return work; });
+		//mCondition.wait(ulck, isWorkAvailable);
 
 		if (mThreadExit)
 		{
@@ -62,7 +67,7 @@ void ThreadPool::wait(uchar threadNum)
 	}
 }
 
-void ThreadPool::doWork(void (*func)(uchar, uchar, void*, void*, void*, void*), void * arg1, void * arg2, void * arg3, void * arg4)
+void ThreadPool::doWorkInst(void (*func)(uchar, uchar, void*, void*, void*, void*), void * arg1, void * arg2, void * arg3, void * arg4)
 {
 	unique_lock<mutex> ulck(mWorkMutex);
 

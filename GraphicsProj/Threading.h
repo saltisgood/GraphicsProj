@@ -14,13 +14,18 @@ namespace perf
 	class ThreadPool
 	{
 	public:
-		ThreadPool();
 		virtual ~ThreadPool();
 
-		void doWork(void (*func)(uchar, uchar, void*, void*, void*, void*), void * = NULL, void * = NULL, void * = NULL, void * = NULL);
+		static void doWork(void (*func)(uchar, uchar, void*, void*, void*, void*), void *arg1 = NULL, void *arg2 = NULL, void *arg3 = NULL, void *arg4 = NULL)
+		{
+			sInstance->doWorkInst(func, arg1, arg2, arg3, arg4);
+		}
 
 	private:
-		bool isWorkAvailable() const { return mWorkAvailable; }
+		ThreadPool();
+
+		void doWorkInst(void (*func)(uchar, uchar, void*, void*, void*, void*), void *, void *, void *, void *);
+		bool isWorkAvailable() const { mWorkAvailable; }
 		void wait(uchar);
 
 		const uchar mThreadNum;
@@ -36,7 +41,13 @@ namespace perf
 		void * mArg2;
 		void * mArg3;
 		void * mArg4;
+
+		static ThreadPool * sInstance;
+
+		//friend bool isWorkAvailable();
 	};
+
+	//bool isWorkAvailable() { return ThreadPool::sInstance->mWorkAvailable; }
 }
 
 #endif
