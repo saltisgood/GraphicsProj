@@ -180,7 +180,26 @@ void proj::chromaKey(Mat& img, const Colour& colour)
     {
         nCols *= nRows;
         nRows = 1;
+
+		uchar* p = img.data;
+		for (int i = 0; i < nCols; i += channels, p += channels)
+		{
+			if (abs(p[0] - colour.getBlue()) > MAX_DIFF || abs(p[1] - colour.getGreen()) > MAX_DIFF || abs(p[2] - colour.getRed()) > MAX_DIFF)
+			{
+				p[0] = 0;
+				p[1] = 0;
+				p[2] = 0;
+			}
+			else
+			{
+				p[0] = 255;
+				p[1] = 255;
+				p[2] = 255;
+			}
+		}
     }
+	else
+	{
 
     int i,j;
     uchar* p;
@@ -203,6 +222,7 @@ void proj::chromaKey(Mat& img, const Colour& colour)
 			}
         }
     }
+	}
 }
 /*
 void proj::blur(Mat& img, uint passes)
@@ -352,6 +372,11 @@ void proj::drawText(cv::Mat& img, const std::string& text, const cv::Point& org,
 	}
 
 	putText(img, text, textOrg, cv::FONT_HERSHEY_COMPLEX, fontScale, colour, 3);
+}
+
+void proj::backgroundDiff(const Mat& bg, Mat& img)
+{
+	img = img - bg;
 }
 
 #ifdef _DEBUG

@@ -156,6 +156,7 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BGround.cpp" />
     <ClCompile Include="Colour.cpp" />
     <ClCompile Include="Hand.cpp" />
     <ClCompile Include="Hands.cpp" />
@@ -170,6 +171,7 @@
     <ClCompile Include="Vertices.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BGround.h" />
     <ClInclude Include="Colour.h" />
     <ClInclude Include="Display.h" />
     <ClInclude Include="Hand.h" />

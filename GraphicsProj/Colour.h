@@ -16,10 +16,14 @@ namespace proj
 		uchar getGreen() const { return mG; }
 
 		cv::Scalar toScalar() const;
+		ushort diff(const Colour&) const;
+
+		static ushort diff(const cv::Scalar_<uchar>&, const cv::Scalar_<uchar>&);
+		static ushort diff(const uchar*, const uchar*);
 
 	protected:
 		uchar mR, mG, mB;
-		mutable cv::Scalar *mScalar;
+		mutable cv::Scalar_<uchar> *mScalar;
 	};
 }
 

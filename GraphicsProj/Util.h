@@ -55,6 +55,8 @@ namespace proj
 
 	void drawText(cv::Mat& img, const std::string& text, const cv::Point& org, double fontScale, const cv::Scalar& colour, bool isCentred);
 
+	void backgroundDiff(const cv::Mat& bg, cv::Mat& img);
+
 #ifdef _DEBUG
 	void debugDisplayImage(cv::Mat&);
 #endif

@@ -1,5 +1,9 @@
 #include "Looper.h"
 
+#ifdef _DEBUG
+#include <time.h>
+#endif
+
 using namespace disp;
 using namespace std;
 using namespace cv;
@@ -34,6 +38,8 @@ Looper::Looper(Display display, VideoCapture& videoIn, const switches& args) :
 	mGloveColour(8, 110, 97),
 
 	mHands(),
+
+	mBG(),
 
 	mDrawColour(0, 0, 255, 255),
 
@@ -97,6 +103,9 @@ void Looper::init()
 
 void Looper::loop()
 {
+#ifdef _DEBUG
+	clock_t time = clock();
+#endif
 	for (mVideoInput >> mSource; mSource.data != NULL; mVideoInput >> mSource, mTicks++)
 	{
 		// Do stuff!
@@ -118,21 +127,30 @@ void Looper::loop()
 				}
 			}
 		}
-
 		mProgramLogic.drawAnything(mSource);
-
+		
 		mTexture->copyFrom(mSource);
 		updateWindow(WINDOW_TITLE);
 
 		char c = (char)waitKey(25);
 		if (c == ESC_KEY) break;
 	}
+
+#ifdef _DEBUG
+	time = clock() - time;
+
+	printf("Execution took %d ticks (%f seconds)\n", time, ((float)time / CLOCKS_PER_SEC));
+#endif
 }
 
 void Looper::imgMod()
 {
 	// Copy source image
 	mImageKey = mSource.clone();
+	//Remove background
+	//mBG.extractForeground(mImageKey);
+	//mBG.extractForeground(mSource);
+	//return;
 	// Extract colour
 	proj::chromaKey(mImageKey, mGloveColour);
 	// Convert to grayscale
@@ -152,7 +170,7 @@ void Looper::shapeDetect()
 	//Detect edges
 	threshold(mImageMod, threshold_out, THRESH, MAX_THRESH, THRESH_BINARY);
 	// Find shapes
-	findContours(threshold_out, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+	findContours(threshold_out, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
 	// Approximate contours to polys
 	vector<vector<Point> > shapes(contours.size());
 	vector<Rect> boundRect(contours.size());
@@ -176,7 +194,7 @@ void Looper::interpretImg(vector<Rect>& shapes)
 	}
 	else // Is Video
 	{
-#ifdef _DEBUG
+#ifndef _DEBUG
 		if (mTicks == 0)
 		{
 			calibrate(mHands, shapes, true);
@@ -192,7 +210,7 @@ void Looper::interpretImg(vector<Rect>& shapes)
 				cout << "Blerghhhh! Errorrr on frame " << mTicks << endl;
 			}
 		}
-#elif
+#else
 		// Nothing yet
 #endif
 	}

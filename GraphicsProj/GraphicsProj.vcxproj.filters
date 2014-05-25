@@ -69,6 +69,9 @@
     <ClCompile Include="Util.cpp">
       <Filter>Source Files\Proj</Filter>
     </ClCompile>
+    <ClCompile Include="BGround.cpp">
+      <Filter>Source Files\Proj</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Matrix.h">
@@ -108,6 +111,9 @@
       <Filter>Header Files\Proj</Filter>
     </ClInclude>
     <ClInclude Include="Util.h">
+      <Filter>Header Files\Proj</Filter>
+    </ClInclude>
+    <ClInclude Include="BGround.h">
       <Filter>Header Files\Proj</Filter>
     </ClInclude>
   </ItemGroup>

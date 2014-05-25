@@ -10,6 +10,7 @@
 #include "Line.h"
 #include "Hands.h"
 #include "Logic.h"
+#include "BGround.h"
 
 namespace disp
 {
@@ -55,6 +56,8 @@ namespace disp
 		proj::Colour mGloveColour;
 
 		proj::Hands mHands;
+
+		proj::BackGround mBG;
 
 		cv::Scalar mDrawColour;
 
