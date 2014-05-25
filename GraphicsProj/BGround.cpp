@@ -30,9 +30,9 @@ void threadTest(uchar threadNo, uchar threadNums, void *pbg, void *ptmp, void *,
 
 	uchar *p;
 	uchar *q;
-	int rows = tmp->rows;
-	int channels = tmp->channels();
-	int cols = tmp->cols * channels;
+	static int rows = tmp->rows;
+	static int channels = tmp->channels();
+	static int cols = tmp->cols * channels;
 
 	int tcount = rows / threadNums;
 	int start = (int)threadNo * tcount;
@@ -40,7 +40,6 @@ void threadTest(uchar threadNo, uchar threadNums, void *pbg, void *ptmp, void *,
 
 	if (bg->isContinuous() && tmp->isContinuous())
 	{
-		//cols *= rows;
 		tcount *= cols;
 		start *= cols;
 
@@ -64,88 +63,30 @@ void threadTest(uchar threadNo, uchar threadNums, void *pbg, void *ptmp, void *,
 			p = tmp->ptr<uchar>(i);
 			q = bg->ptr<uchar>(i);
 
-			for (int j = 0; j < cols; j += channels)
+			for (int j = 0; j < cols; j += channels, p += channels, q += channels)
 			{
-				if (Colour::diff(p[j], q[j]) <= MIN_DIFF)
+				if (Colour::diff(p, q) <= MIN_DIFF)
 				{
 					// WARNING: Assumes channels == 3
-					p[j] = 0;
-					p[j + 1] = 0;
-					p[j + 2] = 0;
+					p[0] = 0;
+					p[1] = 0;
+					p[2] = 0;
 				}
 			}
 		}
 	}
-}
-
-void BackGround::test(int n, Mat*img)
-{
-	threadTest(n, 4, &mBg, img, nullptr, nullptr);
 }
 
 void BackGround::extractForeground(Mat& img)
 {
-	Mat tmp;
-	resize(img, tmp, Size(), 0.5, 0.5, CV_INTER_AREA);
+	//Mat tmp;
+	//resize(img, tmp, Size(), 0.5, 0.5, CV_INTER_AREA);
 
 	if (mBg.empty())
 	{
-		//forceBackground(img);
-		forceBackground(tmp);
+		forceBackground(img);
+		//forceBackground(tmp);
 	}
-	//img -= mBg;
 
-	perf::ThreadPool::doWork(&threadTest, &mBg, &tmp);
-	/* std::thread t[4];
-	for (int i = 0; i < 4; i++)
-	{
-		t[i] = std::thread(&proj::BackGround::test, this, i, &tmp);
-	}
-	for (int i = 0; i < 4; i++)
-	{
-		t[i].join();
-	} */
-
-	/* uchar *p;
-	const uchar *q;
-	int rows = tmp.rows;
-	int channels = tmp.channels();
-	int cols = tmp.cols * channels;
-
-	if (mBg.isContinuous() && tmp.isContinuous())
-	{
-		cols *= rows;
-		rows = 1;
-
-		p = tmp.data;
-		q = mBg.data;
-		for (int i = 0; i < cols; i += channels, p += channels, q += channels)
-		{
-			if (Colour::diff(p, q) <= MIN_DIFF)
-			{
-				p[0] = 0;
-				p[1] = 0;
-				p[2] = 0;
-			}
-		}
-	}
-	else
-	{
-		for (int i = 0; i < rows; i++)
-		{
-			p = tmp.ptr<uchar>(i);
-			q = mBg.ptr<uchar>(i);
-
-			for (int j = 0; j < cols; j += channels)
-			{
-				if (Colour::diff(p[j], q[j]) <= MIN_DIFF)
-				{
-					// WARNING: Assumes channels == 3
-					p[j] = 0;
-					p[j + 1] = 0;
-					p[j + 2] = 0;
-				}
-			}
-		}
-	} */
+	perf::ThreadPool::doWork(&threadTest, &mBg, &img);
 }

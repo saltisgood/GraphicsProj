@@ -150,7 +150,7 @@ void Looper::imgMod()
 	//Remove background
 	mBG.extractForeground(mImageKey);
 	//mBG.extractForeground(mSource);
-	//return;
+	return;
 	// Extract colour
 	proj::chromaKey(mImageKey, mGloveColour);
 	// Convert to grayscale

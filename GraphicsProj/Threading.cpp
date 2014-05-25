@@ -41,21 +41,18 @@ ThreadPool::~ThreadPool()
 
 void ThreadPool::wait(uchar threadNum)
 {
-	unique_lock<mutex> ulck(mMutex, defer_lock);
+	mutex lck;
+	unique_lock<mutex> ulck(lck);
 	bool& work = mWorkAvailable;
 
 	while (!mThreadExit)
 	{
 		mWorkMutex.lock();
-		ulck.lock();
 		mWorkMutex.unlock();
 
 		mAtomicCount++;
 
-		//mCondition.wait<bool (perf::ThreadPool::*)() const>(ulck, &perf::ThreadPool::isWorkAvailable);
 		mCondition.wait(ulck, [&work]() { return work; });
-		ulck.unlock();
-		//mCondition.wait(ulck, isWorkAvailable);
 
 		if (mThreadExit)
 		{
@@ -85,7 +82,7 @@ void ThreadPool::doWorkInst(void (*func)(uchar, uchar, void*, void*, void*, void
 	
 	mCondition.notify_all();
 
-	while (mAtomicCount < mThreadNum)
+	while (mAtomicCount < avail_threads)
 	{
 		this_thread::yield();
 	}

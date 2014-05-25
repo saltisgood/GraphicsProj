@@ -43,11 +43,20 @@ namespace perf
 		void * mArg4;
 
 		static ThreadPool * sInstance;
-
-		//friend bool isWorkAvailable();
 	};
+}
 
-	//bool isWorkAvailable() { return ThreadPool::sInstance->mWorkAvailable; }
+#else
+
+namespace perf
+{
+	class ThreadPool
+	{
+		static void doWork(void (*func)(uchar, uchar, void*, void*, void*, void*), void *arg1 = NULL, void *arg2 = NULL, void *arg3 = NULL, void *arg4 = NULL)
+		{
+			(*func)(0, 1, arg1, arg2, arg3, arg4);
+		}
+	};
 }
 
 #endif
