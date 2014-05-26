@@ -7,6 +7,8 @@
 
 #include "Colour.h"
 
+#define SAFE_DEC(x) x = (x == 0) ? 0 : x - 1;
+
 typedef unsigned int uint;
 typedef unsigned char uchar;
 typedef unsigned short ushort;
@@ -56,6 +58,12 @@ namespace proj
 	void drawText(cv::Mat& img, const std::string& text, const cv::Point& org, double fontScale, const cv::Scalar& colour, bool isCentred);
 
 	void backgroundDiff(const cv::Mat& bg, cv::Mat& img);
+
+	inline void updateRollingAve(int& ave, uint& ind, int newVal)
+	{
+		ave = (newVal + (ind * ave)) / (ind + 1);
+		ind++;
+	}
 
 #ifdef _DEBUG
 	void debugDisplayImage(cv::Mat&);

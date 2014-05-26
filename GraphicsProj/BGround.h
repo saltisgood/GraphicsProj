@@ -18,8 +18,8 @@ namespace proj
 
 	private:
 		cv::Mat mBg;
+		cv::Mat mEntropy;
 		mutable int mFramesSinceBG;
-		mutable int mEntropy;
 	};
 }
 

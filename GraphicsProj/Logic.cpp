@@ -11,9 +11,11 @@ Logic::Logic(const Display& display) : mDisplay(display), mTextColour(255, 255, 
 
 void Logic::drawAnything(Mat& img)
 {
+#ifndef _DEBUG
 	if (!mIsCalibrated)
 	{
 		drawText(img, "Please place your hands", Point(mDisplay.getWidth() / 2, 30), 2, mTextColour.toScalar(), true);
 		drawText(img, "in the squares", Point(mDisplay.getWidth() / 2, 90), 2, mTextColour.toScalar(), true);
 	}
+#endif
 }
