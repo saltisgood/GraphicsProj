@@ -6,8 +6,6 @@
 using namespace proj;
 using namespace cv;
 
-const ushort MIN_DIFF = 35;
-
 BackGround::BackGround() : 
 	mBg(),
 	mFramesSinceBG(0),
@@ -22,6 +20,8 @@ void BackGround::forceBackground(const Mat& newBg)
 	mFramesSinceBG = 0;
 	mEntropy = Mat::zeros(mBg.rows, mBg.cols, CV_8UC1);
 }
+
+#define MIN_DIFF 30
 
 void segmentDiff(uchar threadNo, uchar threadNums, void *pbg, void *ptmp, void *, void *)
 {
@@ -79,7 +79,11 @@ void segmentDiff(uchar threadNo, uchar threadNums, void *pbg, void *ptmp, void *
 
 #define XBLOCK_SIZE 10
 #define YBLOCK_SIZE 5
-#define MAX_ENTROPY 5
+#define MAX_ENTROPY 10
+
+#define MAX_DIFF 100
+
+const int DIFF_INTERVAL = MAX_DIFF - MIN_DIFF;
 
 void segUpdateBG(uchar threadNo, uchar threadNums, void *pbg, void *pimg, void *pdest, void *pentropy)
 {
@@ -135,7 +139,6 @@ void segUpdateBG(uchar threadNo, uchar threadNums, void *pbg, void *pimg, void *
 					}
 				}
 
-				// Do something with ave
 				if (ave <= MIN_DIFF)
 				{
 					for (int y = 0; (y < YBLOCK_SIZE) && (row + y < rows); y++)
@@ -154,7 +157,7 @@ void segUpdateBG(uchar threadNo, uchar threadNums, void *pbg, void *pimg, void *
 						}
 					}
 				}
-				else
+				else if (ave >= MAX_DIFF)
 				{
 					for (int y = 0; (y < YBLOCK_SIZE) && (row + y < rows); y++)
 					{
@@ -164,6 +167,38 @@ void segUpdateBG(uchar threadNo, uchar threadNums, void *pbg, void *pimg, void *
 
 						for (int x = 0; (x < XBLOCK_SIZE) && ((channels * (col + x)) < cols); x++, ptmp += channels, qtmp += channels, etmp++)
 						{
+							if ((*etmp) >= MAX_ENTROPY)
+							{
+								(*etmp) = 0;
+
+								ptmp[0] = qtmp[0];
+								ptmp[1] = qtmp[1];
+								ptmp[2] = qtmp[2];
+							}
+							else
+							{
+								(*etmp) += 2;
+							}
+						}
+					}
+				}
+				else
+				{
+					const uchar avediff = ave - MIN_DIFF;
+
+					for (int y = 0; (y < YBLOCK_SIZE) && (row + y < rows); y++)
+					{
+						ptmp = prow + (y * cols);
+						qtmp = qrow + (y * cols);
+						rtmp = rrow + (y * cols);
+						etmp = erow + (y * entropy->cols);
+
+						for (int x = 0; (x < XBLOCK_SIZE) && ((channels * (col + x)) < cols); x++, ptmp += channels, qtmp += channels, rtmp += channels, etmp++)
+						{
+							rtmp[0] = (qtmp[0] * avediff) / DIFF_INTERVAL;
+							rtmp[1] = (qtmp[1] * avediff) / DIFF_INTERVAL;
+							rtmp[2] = (qtmp[2] * avediff) / DIFF_INTERVAL;
+
 							if ((*etmp) >= MAX_ENTROPY)
 							{
 								(*etmp) = 0;
