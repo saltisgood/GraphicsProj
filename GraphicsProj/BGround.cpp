@@ -17,20 +17,15 @@ BackGround::BackGround() :
 void BackGround::forceBackground(const Mat& newBg)
 {
 	mBg = newBg.clone();
-	mEntropy = Mat::zeros(mBg.rows, mBg.cols, CV_8UC4);
+	mEntropy = Mat::zeros(mBg.rows, mBg.cols, CV_8UC1);
 }
 
-#ifdef __C3
-	#define MIN_DIFF 30
-#else
-	#define MIN_DIFF 0
-#endif
-
+#define MIN_DIFF 30
 #define XBLOCK_SIZE 3
 #define YBLOCK_SIZE 3
 #define MAX_ENTROPY 30
 #define MAX_DIFF 100
-#define ENTROPY_CHANNELS 4
+#define ENTROPY_CHANNELS 1
 
 const int DIFF_INTERVAL = MAX_DIFF - MIN_DIFF;
 
@@ -100,17 +95,14 @@ void segUpdateBG WORKER_ARGS(threadNo, threadNums, pbg, pimg, pdest, pentropy)
 						detmp = derow + (y * cols);
 						etmp = erow + (y * ecols);
 
-						// Note: An optimisation can be made since entropy need only be as many blocks as there are. Saves on space plus repeated branching.
-						for (int x = 0; (x < XBLOCK_SIZE) && ((channels * (col + x)) < cols); x++, etmp += ediff)
+						for (int x = 0; (x < XBLOCK_SIZE) && ((channels * (col + x)) < cols); x++, ++etmp)
 						{
-
-							for (int c = 0; c < channels; ++c, ++btmp, ++imtmp, ++etmp)
+							for (int c = 0; c < channels; ++c, ++btmp, ++imtmp)
 							{
 								updateWeightedAve<uchar>(*btmp, 7, *imtmp);
-								*etmp = 0;
 							}
 
-							SAFE_DEC(*etmp);
+							*etmp = 0;
 						}
 					}
 				}
@@ -120,12 +112,9 @@ void segUpdateBG WORKER_ARGS(threadNo, threadNums, pbg, pimg, pdest, pentropy)
 					{
 						etmp = erow + (y * ecols);
 
-						for (int x = 0; (x < XBLOCK_SIZE) && ((channels * (col + x)) < cols); x++, etmp += ediff)
+						for (int x = 0; (x < XBLOCK_SIZE) && ((channels * (col + x)) < cols); ++x, ++etmp)
 						{
-							for (int c = 0; c < channels; ++c, ++etmp)
-							{
-								*etmp = 255;
-							}
+							*etmp = 255;
 						}
 					}
 				}
@@ -138,12 +127,9 @@ void segUpdateBG WORKER_ARGS(threadNo, threadNums, pbg, pimg, pdest, pentropy)
 					{
 						etmp = erow + (y * ecols);
 
-						for (int x = 0; (x < XBLOCK_SIZE) && ((channels * (col + x)) < cols); x++,  etmp += ediff)
+						for (int x = 0; (x < XBLOCK_SIZE) && ((channels * (col + x)) < cols); x++,  ++etmp)
 						{
-							for (int c = 0; c < channels; ++c, ++etmp)
-							{
-								*etmp = avediff;
-							}
+							*etmp = avediff;
 						}
 					}
 				}
@@ -173,7 +159,7 @@ void BackGround::extractForeground(Mat& img)
 	perf::ThreadPool::doWork(&segUpdateBG, &mBg, &tmp, &img, &mEntropy);
 }
 
-void SegComposite WORKER_ARGS(threadNo, threadNums, pimg, preplacement, pentropy,)
+void segComposite WORKER_ARGS(threadNo, threadNums, pimg, preplacement, pentropy,)
 {
 	const Mat * replacement = (Mat *)preplacement;
 	Mat * img = (Mat *)pimg;
@@ -200,9 +186,9 @@ void SegComposite WORKER_ARGS(threadNo, threadNums, pimg, preplacement, pentropy
 	start *= img->cols;
 	tcount *= img->cols;
 
-	for (; start < tcount; start++, e += ediff)
+	for (; start < tcount; start++, ++e)
 	{
-		for (int j = 0; j < channels; ++j, ++i, ++e, ++r)
+		for (int j = 0; j < channels; ++j, ++i, ++r)
 		{
 			*i =  ((*i * *e) / UCHAR_MAX) + ((*r * (UCHAR_MAX - *e)) / UCHAR_MAX);
 		}
@@ -211,10 +197,14 @@ void SegComposite WORKER_ARGS(threadNo, threadNums, pimg, preplacement, pentropy
 
 void BackGround::composite(Mat& img)
 {
+	static const Mat kernel = getStructuringElement(MORPH_RECT, Size(15, 15));
+	static const Point pt(-1, -1);
+	morphologyEx(mEntropy, mEntropy, MORPH_CLOSE, kernel, pt, 3);
+
 	CV_DbgAssert(img.isContinuous());
 	CV_DbgAssert(mReplacement.isContinuous());
 	CV_DbgAssert(mEntropy.isContinuous());
 
-	perf::ThreadPool::doWork(&SegComposite, &img, &mReplacement, &mEntropy);
+	perf::ThreadPool::doWork(&segComposite, &img, &mReplacement, &mEntropy);
 }
 
