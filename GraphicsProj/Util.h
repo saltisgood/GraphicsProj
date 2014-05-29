@@ -65,6 +65,17 @@ namespace proj
 		ind++;
 	}
 
+	inline void updateWeightedAve(int& ave, uint weight, int newVal)
+	{
+		ave = (newVal + (weight * ave)) / (weight + 1);
+	}
+
+	template<typename T>
+	inline void updateWeightedAve(T& ave, uint weight, T newVal)
+	{
+		ave = (newVal + (weight * ave)) / (weight + 1);
+	}
+
 #ifdef _DEBUG
 	void debugDisplayImage(cv::Mat&);
 #endif

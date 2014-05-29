@@ -18,10 +18,10 @@ void BackGround::forceBackground(const Mat& newBg)
 {
 	mBg = newBg.clone();
 	mFramesSinceBG = 0;
-	mEntropy = Mat::zeros(mBg.rows, mBg.cols, CV_8UC1);
+	mEntropy = Mat::zeros(mBg.rows, mBg.cols, CV_8UC4);
 }
 
-#define MIN_DIFF 30
+#define MIN_DIFF 20
 
 void segmentDiff(uchar threadNo, uchar threadNums, void *pbg, void *ptmp, void *, void *)
 {
@@ -77,11 +77,11 @@ void segmentDiff(uchar threadNo, uchar threadNums, void *pbg, void *ptmp, void *
 	}
 }
 
-#define XBLOCK_SIZE 10
+#define XBLOCK_SIZE 5
 #define YBLOCK_SIZE 5
 #define MAX_ENTROPY 10
-
-#define MAX_DIFF 100
+#define MAX_DIFF 120
+#define ENTROPY_CHANNELS 4
 
 const int DIFF_INTERVAL = MAX_DIFF - MIN_DIFF;
 
@@ -95,6 +95,7 @@ void segUpdateBG(uchar threadNo, uchar threadNums, void *pbg, void *pimg, void *
 	static int rows = img->rows;
 	static int channels = img->channels();
 	static int cols = img->cols * channels;
+	static int ecols = entropy->cols * ENTROPY_CHANNELS;
 	uchar *p;
 	uchar *q;
 	uchar *r;
@@ -109,21 +110,22 @@ void segUpdateBG(uchar threadNo, uchar threadNums, void *pbg, void *pimg, void *
 		p = bg->data + (start * cols);
 		q = img->data + (start * cols);
 		r = dest->data + (start * cols);
-		e = entropy->data + (start * entropy->cols);
+		e = entropy->data + (start * ecols);
 
 		uchar * ptmp, * prow;
 		uchar * qtmp, * qrow;
 		uchar * rtmp, * rrow;
 		uchar * etmp, * erow;
 
-		for (int row = start; row < tcount; row += YBLOCK_SIZE, p += YBLOCK_SIZE * cols, q += YBLOCK_SIZE * cols, r += YBLOCK_SIZE * cols, e += YBLOCK_SIZE * entropy->cols)
+		for (int row = start; row < tcount; row += YBLOCK_SIZE, p += YBLOCK_SIZE * cols, q += YBLOCK_SIZE * cols, r += YBLOCK_SIZE * cols, e += YBLOCK_SIZE * ecols)
 		{
 			prow = p;
 			qrow = q;
 			rrow = r;
 			erow = e;
 
-			for (int col = 0; (channels * col) < cols; col += XBLOCK_SIZE, prow += XBLOCK_SIZE * channels, qrow += XBLOCK_SIZE * channels, rrow += XBLOCK_SIZE * channels, erow += XBLOCK_SIZE)
+			for (int col = 0; (channels * col) < cols; 
+				col += XBLOCK_SIZE, prow += XBLOCK_SIZE * channels, qrow += XBLOCK_SIZE * channels, rrow += XBLOCK_SIZE * channels, erow += XBLOCK_SIZE * ENTROPY_CHANNELS)
 			{
 				int ave = 0;
 				uint ind = 0;
@@ -136,6 +138,10 @@ void segUpdateBG(uchar threadNo, uchar threadNums, void *pbg, void *pimg, void *
 					for (int x = 0; (x < XBLOCK_SIZE) && ((channels * (col + x)) < cols); x++, ptmp += channels, qtmp += channels)
 					{
 						updateRollingAve(ave, ind, Colour::diff(ptmp, qtmp));
+
+						updateWeightedAve<uchar>(ptmp[0], 10, qtmp[0]);
+						updateWeightedAve<uchar>(ptmp[1], 10, qtmp[1]);
+						updateWeightedAve<uchar>(ptmp[2], 10, qtmp[2]);
 					}
 				}
 
@@ -144,16 +150,16 @@ void segUpdateBG(uchar threadNo, uchar threadNums, void *pbg, void *pimg, void *
 					for (int y = 0; (y < YBLOCK_SIZE) && (row + y < rows); y++)
 					{
 						rtmp = rrow + (y * cols);
-						etmp = erow + (y * entropy->cols);
+						etmp = erow + (y * ecols);
 
 						// Note: An optimisation can be made since entropy need only be as many blocks as there are. Saves on space plus repeated branching.
-						for (int x = 0; (x < XBLOCK_SIZE) && ((channels * (col + x)) < cols); x++, rtmp += channels, etmp++)
+						for (int x = 0; (x < XBLOCK_SIZE) && ((channels * (col + x)) < cols); x++, rtmp += channels, etmp += ENTROPY_CHANNELS)
 						{
 							rtmp[0] = 0;
 							rtmp[1] = 0;
 							rtmp[2] = 0;
 
-							SAFE_DEC(*etmp);
+							SAFE_DEC(etmp[3]);
 						}
 					}
 				}
@@ -163,13 +169,13 @@ void segUpdateBG(uchar threadNo, uchar threadNums, void *pbg, void *pimg, void *
 					{
 						ptmp = prow + (y * cols);
 						qtmp = qrow + (y * cols);
-						etmp = erow + (y * entropy->cols);
+						etmp = erow + (y * ecols);
 
-						for (int x = 0; (x < XBLOCK_SIZE) && ((channels * (col + x)) < cols); x++, ptmp += channels, qtmp += channels, etmp++)
+						for (int x = 0; (x < XBLOCK_SIZE) && ((channels * (col + x)) < cols); x++, ptmp += channels, qtmp += channels, etmp += ENTROPY_CHANNELS)
 						{
-							if ((*etmp) >= MAX_ENTROPY)
+							if (etmp[3] >= MAX_ENTROPY)
 							{
-								(*etmp) = 0;
+								etmp[3] = 0;
 
 								ptmp[0] = qtmp[0];
 								ptmp[1] = qtmp[1];
@@ -177,7 +183,7 @@ void segUpdateBG(uchar threadNo, uchar threadNums, void *pbg, void *pimg, void *
 							}
 							else
 							{
-								(*etmp) += 2;
+								etmp[3] += 2;
 							}
 						}
 					}
@@ -191,17 +197,17 @@ void segUpdateBG(uchar threadNo, uchar threadNums, void *pbg, void *pimg, void *
 						ptmp = prow + (y * cols);
 						qtmp = qrow + (y * cols);
 						rtmp = rrow + (y * cols);
-						etmp = erow + (y * entropy->cols);
+						etmp = erow + (y * ecols);
 
-						for (int x = 0; (x < XBLOCK_SIZE) && ((channels * (col + x)) < cols); x++, ptmp += channels, qtmp += channels, rtmp += channels, etmp++)
+						for (int x = 0; (x < XBLOCK_SIZE) && ((channels * (col + x)) < cols); x++, ptmp += channels, qtmp += channels, rtmp += channels, etmp += ENTROPY_CHANNELS)
 						{
 							rtmp[0] = (qtmp[0] * avediff) / DIFF_INTERVAL;
 							rtmp[1] = (qtmp[1] * avediff) / DIFF_INTERVAL;
 							rtmp[2] = (qtmp[2] * avediff) / DIFF_INTERVAL;
 
-							if ((*etmp) >= MAX_ENTROPY)
+							if (etmp[3] >= MAX_ENTROPY)
 							{
-								(*etmp) = 0;
+								etmp[3] = 0;
 
 								ptmp[0] = qtmp[0];
 								ptmp[1] = qtmp[1];
@@ -209,7 +215,7 @@ void segUpdateBG(uchar threadNo, uchar threadNums, void *pbg, void *pimg, void *
 							}
 							else
 							{
-								++(*etmp);
+								etmp[3]++;
 							}
 						}
 					}
