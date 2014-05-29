@@ -3,6 +3,8 @@
 
 #include <opencv2/core/core.hpp>
 
+#include <stdint.h>
+
 namespace proj
 {
 	class Colour
@@ -20,6 +22,15 @@ namespace proj
 
 		static ushort diff(const cv::Scalar_<uchar>&, const cv::Scalar_<uchar>&);
 		static ushort diff(const uchar*, const uchar*);
+		
+		inline static int32_t colourFrom(uchar r, uchar g, uchar b);
+
+		inline static uchar extractRed(int32_t colour);
+		inline static uchar extractBlue(int32_t colour);
+		inline static uchar extractGreen(int32_t colour);
+
+		const static int32_t GREEN = (255 << 8);
+		const static int32_t BLUE = (255);
 
 	protected:
 		uchar mR, mG, mB;

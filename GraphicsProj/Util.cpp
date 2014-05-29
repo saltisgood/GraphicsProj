@@ -70,7 +70,7 @@ void blueMask(const Mat& img, Mat& mask)
 	int cols = img.cols * channels;
 
 	CV_DbgAssert(channels >= 3);
-	CV_DbgAssert(rows == mask.rows && cols == mask.cols);
+	CV_DbgAssert(rows == mask.rows && img.cols == mask.cols);
 	CV_DbgAssert(mask.channels() == 1);
 	CV_DbgAssert(img.depth() == mask.depth());
 
@@ -95,7 +95,7 @@ void greenMask(const Mat& img, Mat& mask)
 	int cols = img.cols * channels;
 
 	CV_DbgAssert(channels >= 3);
-	CV_DbgAssert(rows == mask.rows && cols == mask.cols);
+	CV_DbgAssert(rows == mask.rows && img.cols == mask.cols);
 	CV_DbgAssert(mask.channels() == 1);
 	CV_DbgAssert(img.depth() == mask.depth());
 
@@ -112,7 +112,7 @@ void greenMask(const Mat& img, Mat& mask)
 	}
 }
 
-void proj::rgbKey(Mat& img, char colour)
+void proj::rgbKey(Mat& img, int32_t colour)
 {
 	if (!img.data)
 	{
@@ -123,13 +123,13 @@ void proj::rgbKey(Mat& img, char colour)
 	rgbKey(img, msk, colour);
 }
 
-void proj::rgbKey(const Mat& img, Mat& _mask, char colour, bool invert)
+void proj::rgbKey(const Mat& img, Mat& _mask, int32_t colour, bool invert)
 {
 	Mat mod = img;
 	rgbKey(mod, _mask, colour, invert);
 }
 
-void proj::rgbKey(Mat& img, Mat& _mask, char colour, bool _invert, bool _DoMask)
+void proj::rgbKey(Mat& img, Mat& _mask, int32_t colour, bool _invert, bool _DoMask)
 {
 	if (!img.data)
 	{
@@ -141,11 +141,11 @@ void proj::rgbKey(Mat& img, Mat& _mask, char colour, bool _invert, bool _DoMask)
 
 	switch (colour)
 	{
-	case BLUE:
+	case Colour::BLUE:
 		blueDiff<uchar>(img, imgmod);
 		blueMask<uchar>(img, _mask);
 		break;
-	case GREEN:
+	case Colour::GREEN:
 		greenDiff<uchar>(img, imgmod);
 		greenMask<uchar>(img, _mask);
 		break;
@@ -156,11 +156,10 @@ void proj::rgbKey(Mat& img, Mat& _mask, char colour, bool _invert, bool _DoMask)
 	if (_invert)
 	{
 		invert<uchar>(_mask, 255);
-
-		if (_DoMask)
-		{
-			mask<uchar>(imgmod, img, _mask, 255);
-		}
+	}
+	if (_DoMask)
+	{
+		mask<uchar>(imgmod, img, _mask, 255);
 	}
 }
 

@@ -30,16 +30,13 @@ namespace proj
 
 	const uchar MAX_DIFF = 60;
 
-	const char GREEN = 1;
-	const char BLUE = 2;
-
 	void chromaKey(cv::Mat& img, const Colour& colour);
 
 	void greenKey(cv::Mat& img);
 
-	void rgbKey(cv::Mat& img, char colour);
-	void rgbKey(cv::Mat& img, cv::Mat& outMask, char colour, bool invert = true, bool mask = true);
-	void rgbKey(const cv::Mat& img, cv::Mat& outMask, char colour, bool invert = true);
+	void rgbKey(cv::Mat& img, int32_t colour);
+	void rgbKey(cv::Mat& img, cv::Mat& outMask, int32_t colour, bool invert = true, bool mask = true);
+	void rgbKey(const cv::Mat& img, cv::Mat& outMask, int32_t colour, bool invert = true);
 
 	template<typename T>
 	void invert(cv::Mat&, T);

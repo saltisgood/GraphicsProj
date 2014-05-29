@@ -179,7 +179,7 @@ void modImg(const std::string& filename)
 	img = imread(filename);
 
 	//greenKey(img);
-	rgbKey(img, GREEN);
+	rgbKey(img, Colour::BLUE);
 }
 
 #endif

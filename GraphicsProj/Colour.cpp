@@ -40,3 +40,23 @@ ushort Colour::diff(const uchar* c1, const uchar* c2)
 {
 	return (ushort)sqrt<ushort>((ushort)(pow<short, uchar>(c1[0] - c2[0], 2) + pow<short, uchar>(c1[1] - c2[1], 2) + pow<short, uchar>(c1[2] - c2[2], 2)));
 }
+
+inline int32_t Colour::colourFrom(uchar r, uchar g, uchar b)
+{
+	return (int32_t)(r << 16 & g << 8 & b);
+}
+
+inline uchar Colour::extractRed(int32_t colour)
+{
+	return (uchar)(colour >> 16);
+}
+
+inline uchar Colour::extractGreen(int32_t colour)
+{
+	return (uchar)(colour >> 8);
+}
+
+inline uchar Colour::extractBlue(int32_t colour)
+{
+	return (uchar)(colour);
+}
