@@ -65,7 +65,7 @@ void ThreadPool::wait(uchar threadNum)
 	}
 }
 
-void ThreadPool::doWorkInst(void (*func) WORKER_ARGS(), void * arg1, void * arg2, void * arg3, void * arg4)
+void ThreadPool::doWorkInst(void (*func) WORKER_ARGS(,,,,,), void * arg1, void * arg2, void * arg3, void * arg4)
 {
 	unique_lock<mutex> ulck(mWorkMutex);
 
