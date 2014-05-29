@@ -12,7 +12,7 @@ namespace proj
 		virtual ~BackGround() {}
 
 		void forceBackground(const cv::Mat& newBg);
-		void extractForeground(cv::Mat&);
+		void extractForeground(const cv::Mat&);
 		void composite(cv::Mat&);
 		void applyMask(cv::Mat&);
 

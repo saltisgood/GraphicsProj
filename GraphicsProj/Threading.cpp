@@ -3,7 +3,7 @@
 using namespace perf;
 using namespace std;
 
-#define THREAD_NUM 4
+#define THREAD_NUM 8
 
 #ifdef __CPP11
 
@@ -50,7 +50,6 @@ void ThreadPool::wait(uchar threadNum)
 	mutex lck;
 	unique_lock<mutex> ulck(lck);
 	unique_lock<mutex> worklck(mWorkMutex, std::defer_lock);
-	bool& work = mWorkAvailable;
 
 	condition_variable* cond = mConditions.at(threadNum);
 
@@ -61,7 +60,7 @@ void ThreadPool::wait(uchar threadNum)
 
 		mAtomicCount++;
 
-		cond->wait(ulck, [&work]() { return work; });
+		cond->wait(ulck, [this]() { return mWorkAvailable; });
 
 		if (mThreadExit)
 		{

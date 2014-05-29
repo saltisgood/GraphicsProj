@@ -170,7 +170,7 @@ void blueMask(const Mat& img, Mat& mask)
 	CV_DbgAssert(img.rows == mask.rows && img.cols == mask.cols);
 	CV_DbgAssert(mask.channels() == 1);
 	
-	perf::ThreadPool::doWork(&segBlueMask<uchar>, (void *)&img, &mask);
+	perf::ThreadPool::doWork(&segBlueMask<T>, (void *)&img, &mask);
 }
 
 template<typename T>
@@ -222,17 +222,17 @@ void proj::rgbKey(Mat& img, Mat& _mask, int32_t colour, bool _invert, bool _DoMa
 		return;
 	}
 
-	Mat imgmod = img.clone();
+	//Mat imgmod = img.clone();
 	_mask.create(img.rows, img.cols, CV_8UC1);
 
 	switch (colour)
 	{
 	case Colour::BLUE:
-		blueDiff<uchar>(img, imgmod);
+		//blueDiff<uchar>(img, imgmod);
 		blueMask<uchar>(img, _mask);
 		break;
 	case Colour::GREEN:
-		greenDiff<uchar>(img, imgmod);
+		//greenDiff<uchar>(img, imgmod);
 		greenMask<uchar>(img, _mask);
 		break;
 	default:
@@ -245,7 +245,7 @@ void proj::rgbKey(Mat& img, Mat& _mask, int32_t colour, bool _invert, bool _DoMa
 	}
 	if (_DoMask)
 	{
-		mask<uchar>(imgmod, img, _mask, 255);
+		mask<uchar>(img, img, _mask, 255);
 	}
 }
 
@@ -347,13 +347,76 @@ void proj::invert(Mat& img, T max)
 }
 
 template<typename T>
+void segMask WORKER_ARGS(threadNo, numThreads, pimg, pout, pmask, pmax)
+{
+	T max = *(T *)pmax;
+	const Mat * img = (const Mat *)pimg;
+	Mat * out = (Mat *)pout;
+	const Mat * mask = (const Mat *)pmask;
+
+	static const int cols = img->cols;
+	static const int rows = img->rows;
+	static const int channels = img->channels();
+
+	int tcount = numThreads / rows;
+	int start = (int)threadNo * tcount;
+	tcount += start;
+
+	const T * i;
+	T * o;
+	const T * m;
+
+	if (img->isContinuous() && out->isContinuous() && mask->isContinuous())
+	{
+		start *= cols;
+		tcount *= cols;
+
+		i = img->data + (start * channels);
+		o = out->data + (start * channels);
+		m = mask->data + start;
+
+		for (; start < tcount; ++start, ++m)
+		{
+			for (int k = 0; k < channels; ++k, ++o, ++i)
+			{
+				*o = *i * *m / max;
+			}
+		}
+	}
+	else
+	{
+		for (int r = 0; r < rows; r++)
+		{
+			i = img->ptr<T>(r);
+			m = mask->ptr<T>(r);
+			o = out->ptr<T>(r);
+
+			for (int k = 0; k < cols; k++)
+			{
+				for (int j = 0; j < channels; j++)
+				{
+					int index = (k * channels) + j;
+					int val = i[index] * m[k] / max;
+					o[index] = (T)val;
+				}
+			}
+		}
+	}
+}
+
+template<typename T>
 void proj::mask(const Mat& img, Mat& out, const Mat& mask, T max)
 {
 	CV_DbgAssert(img.depth() == mask.depth() && out.depth() == img.depth());
 	CV_DbgAssert(img.channels() == out.channels());
 	CV_DbgAssert(mask.channels() == 1);
+	CV_DbgAssert(img.cols == mask.cols && img.cols == out.cols && img.rows == mask.rows && img.rows == out.rows);
 
-	int nCols = img.cols;
+	static const uchar * mx = new uchar(255);
+
+	perf::ThreadPool::doWork(&segMask<uchar>, (void *)&img, &out, (void *)&mask, (void *)mx);
+
+	/* int nCols = img.cols;
 	int nRows = img.rows;
 
 	int mkCols = mask.cols;
@@ -380,7 +443,7 @@ void proj::mask(const Mat& img, Mat& out, const Mat& mask, T max)
 				o[(k * channels) + j] = (T)val;
 			}
 		}
-	}
+	} */
 }
 
 vector<Rect> proj::sortRect(const vector<Rect>& arr, int maxsort)

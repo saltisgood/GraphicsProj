@@ -1,8 +1,6 @@
 #include "Looper.h"
 
-#ifdef _DEBUG
 #include <time.h>
-#endif
 
 using namespace disp;
 using namespace std;
@@ -103,9 +101,8 @@ void Looper::init()
 
 void Looper::loop()
 {
-#ifdef _DEBUG
 	clock_t time = clock();
-#endif
+
 	for (mVideoInput >> mSource; mSource.data != NULL; mVideoInput >> mSource, mTicks++)
 	{
 		// Do stuff!
@@ -136,11 +133,9 @@ void Looper::loop()
 		if (c == ESC_KEY) break;
 	}
 
-#ifdef _DEBUG
 	time = clock() - time;
 
 	printf("Execution took %d ticks (%f seconds)\n", time, ((float)time / CLOCKS_PER_SEC));
-#endif
 }
 
 void Looper::imgMod()
@@ -154,10 +149,10 @@ void Looper::imgMod()
 	static Size boxBlurSize(5,5);
 	blur(mSource, mSource, boxBlurSize);
 	mBG.extractForeground(mSource);
-	Mat mat;
+	static Mat mat;
 	mImageKey = mSource.clone();
 	mBG.applyMask(mImageKey);
-	proj::rgbKey(mImageKey, mat, proj::Colour::BLUE, false, true);
+	proj::rgbKey(mImageKey, mat, proj::Colour::BLUE, false, false);
 	mBG.composite(mSource);
 	return;
 	// Extract colour
@@ -203,7 +198,8 @@ void Looper::interpretImg(vector<Rect>& shapes)
 	}
 	else // Is Video
 	{
-#ifndef _DEBUG
+#ifdef _DEBUG
+		/*
 		if (mTicks == 0)
 		{
 			calibrate(mHands, shapes, true);
@@ -219,6 +215,7 @@ void Looper::interpretImg(vector<Rect>& shapes)
 				cout << "Blerghhhh! Errorrr on frame " << mTicks << endl;
 			}
 		}
+		*/
 #else
 		// Nothing yet
 #endif

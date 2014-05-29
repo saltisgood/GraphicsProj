@@ -29,11 +29,10 @@ void BackGround::forceBackground(const Mat& newBg)
 
 const int DIFF_INTERVAL = MAX_DIFF - MIN_DIFF;
 
-void segUpdateBG WORKER_ARGS(threadNo, threadNums, pbg, pimg, pdest, pentropy)
+void segUpdateBG WORKER_ARGS(threadNo, threadNums, pbg, pimg, pentropy,)
 {
 	Mat * bg = (Mat *)pbg;
 	const Mat * img = (Mat *)pimg;
-	Mat * dest = (Mat *)pdest;
 	Mat * entropy = (Mat *)pentropy;
 
 	static const int rows = img->rows;
@@ -43,34 +42,30 @@ void segUpdateBG WORKER_ARGS(threadNo, threadNums, pbg, pimg, pdest, pentropy)
 	static const int ediff = ENTROPY_CHANNELS - channels;
 	uchar *b;
 	const uchar *im;
-	uchar *de;
 	uchar *e;
 
 	int tcount = rows / threadNums;
 	int start = (int)threadNo * tcount;
 	tcount += start;
 
-	if (bg->isContinuous() && img->isContinuous() && dest->isContinuous() && entropy->isContinuous())
+	if (bg->isContinuous() && img->isContinuous() && entropy->isContinuous())
 	{
 		b = bg->data + (start * cols);
 		im = img->data + (start * cols);
-		de = dest->data + (start * cols);
 		e = entropy->data + (start * ecols);
 
 		uchar * btmp, * brow;
 		const uchar * imtmp, * imrow;
-		uchar * detmp, * derow;
 		uchar * etmp, * erow;
 
-		for (int row = start; row < tcount; row += YBLOCK_SIZE, b += YBLOCK_SIZE * cols, im += YBLOCK_SIZE * cols, de += YBLOCK_SIZE * cols, e += YBLOCK_SIZE * ecols)
+		for (int row = start; row < tcount; row += YBLOCK_SIZE, b += YBLOCK_SIZE * cols, im += YBLOCK_SIZE * cols, e += YBLOCK_SIZE * ecols)
 		{
 			brow = b;
 			imrow = im;
-			derow = de;
 			erow = e;
 
 			for (int col = 0; (channels * col) < cols; 
-				col += XBLOCK_SIZE, brow += XBLOCK_SIZE * channels, imrow += XBLOCK_SIZE * channels, derow += XBLOCK_SIZE * channels, erow += XBLOCK_SIZE * ENTROPY_CHANNELS)
+				col += XBLOCK_SIZE, brow += XBLOCK_SIZE * channels, imrow += XBLOCK_SIZE * channels, erow += XBLOCK_SIZE * ENTROPY_CHANNELS)
 			{
 				int ave = 0;
 				uint ind = 0;
@@ -92,7 +87,6 @@ void segUpdateBG WORKER_ARGS(threadNo, threadNums, pbg, pimg, pdest, pentropy)
 					{
 						btmp = brow + (y * cols);
 						imtmp = imrow + (y * cols);
-						detmp = derow + (y * cols);
 						etmp = erow + (y * ecols);
 
 						for (int x = 0; (x < XBLOCK_SIZE) && ((channels * (col + x)) < cols); x++, ++etmp)
@@ -138,7 +132,7 @@ void segUpdateBG WORKER_ARGS(threadNo, threadNums, pbg, pimg, pdest, pentropy)
 	}
 }
 
-void BackGround::extractForeground(Mat& img)
+void BackGround::extractForeground(const Mat& img)
 {
 	//Mat tmp;
 	//resize(img, tmp, Size(), 0.5, 0.5, CV_INTER_AREA);
@@ -149,14 +143,11 @@ void BackGround::extractForeground(Mat& img)
 		//forceBackground(tmp);
 	}
 
-	Mat tmp = img.clone();
-
 	CV_DbgAssert(mBg.isContinuous());
-	CV_DbgAssert(tmp.isContinuous());
 	CV_DbgAssert(img.isContinuous());
 	CV_DbgAssert(mEntropy.isContinuous());
 
-	perf::ThreadPool::doWork(&segUpdateBG, &mBg, &tmp, &img, &mEntropy);
+	perf::ThreadPool::doWork(&segUpdateBG, &mBg, (void *)&img, &mEntropy);
 
 	static const Mat kernel = getStructuringElement(MORPH_RECT, Size(15, 15));
 	static const Point pt(-1, -1);
