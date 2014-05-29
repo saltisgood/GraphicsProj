@@ -8,7 +8,6 @@ using namespace cv;
 
 BackGround::BackGround() : 
 	mBg(),
-	mFramesSinceBG(0),
 	mEntropy(),
 	mReplacement()
 {
@@ -18,7 +17,6 @@ BackGround::BackGround() :
 void BackGround::forceBackground(const Mat& newBg)
 {
 	mBg = newBg.clone();
-	mFramesSinceBG = 0;
 	mEntropy = Mat::zeros(mBg.rows, mBg.cols, CV_8UC4);
 }
 
@@ -28,60 +26,6 @@ void BackGround::forceBackground(const Mat& newBg)
 	#define MIN_DIFF 0
 #endif
 
-void segmentDiff(uchar threadNo, uchar threadNums, void *pbg, void *ptmp, void *, void *)
-{
-	Mat * bg = (Mat *)pbg;
-	Mat * tmp = (Mat *)ptmp;
-
-	uchar *p;
-	uchar *q;
-	static int rows = tmp->rows;
-	static int channels = tmp->channels();
-	static int cols = tmp->cols * channels;
-
-	int tcount = rows / threadNums;
-	int start = (int)threadNo * tcount;
-	tcount += start;
-
-	if (bg->isContinuous() && tmp->isContinuous())
-	{
-		tcount *= cols;
-		start *= cols;
-
-		p = tmp->data + start;
-		q = bg->data + start;
-
-		for (int i = start; i < tcount; i += channels, p += channels, q += channels)
-		{
-			if (Colour::diff(p, q) <= MIN_DIFF)
-			{
-				p[0] = 0;
-				p[1] = 0;
-				p[2] = 0;
-			}
-		}
-	}
-	else
-	{
-		for (int i = start; i < tcount; i++)
-		{
-			p = tmp->ptr<uchar>(i);
-			q = bg->ptr<uchar>(i);
-
-			for (int j = 0; j < cols; j += channels, p += channels, q += channels)
-			{
-				if (Colour::diff(p, q) <= MIN_DIFF)
-				{
-					// WARNING: Assumes channels == 3
-					p[0] = 0;
-					p[1] = 0;
-					p[2] = 0;
-				}
-			}
-		}
-	}
-}
-
 #define XBLOCK_SIZE 3
 #define YBLOCK_SIZE 3
 #define MAX_ENTROPY 30
@@ -90,7 +34,7 @@ void segmentDiff(uchar threadNo, uchar threadNums, void *pbg, void *ptmp, void *
 
 const int DIFF_INTERVAL = MAX_DIFF - MIN_DIFF;
 
-void segUpdateBG(uchar threadNo, uchar threadNums, void *pbg, void *pimg, void *pdest, void *pentropy)
+void segUpdateBG WORKER_ARGS(threadNo, threadNums, pbg, pimg, pdest, pentropy)
 {
 	Mat * bg = (Mat *)pbg;
 	Mat * img = (Mat *)pimg;
@@ -305,48 +249,57 @@ void BackGround::extractForeground(Mat& img)
 
 	Mat tmp = img.clone();
 
+	CV_DbgAssert(mBg.isContinuous());
+	CV_DbgAssert(tmp.isContinuous());
+	CV_DbgAssert(img.isContinuous());
+	CV_DbgAssert(mEntropy.isContinuous());
+
 	//perf::ThreadPool::doWork(&segmentDiff, &mBg, &img);
 	perf::ThreadPool::doWork(&segUpdateBG, &mBg, &tmp, &img, &mEntropy);
 }
 
-void BackGround::composite(Mat& img) const
+void SegComposite WORKER_ARGS(threadNo, threadNums, pimg, preplacement, pentropy,)
 {
-	static int rows = img.rows;
-	static int channels = img.channels();
-	static int cols = channels * img.cols;
+	const Mat * replacement = (Mat *)preplacement;
+	Mat * img = (Mat *)pimg;
+	const Mat * entropy = (Mat *)pentropy;
 
-	uchar * dest;
-	const uchar * ori;
-	const uchar * ent;
+	static const int rows = img->rows;
+	static const int channels = img->channels();
+	static const int cols = img->cols * channels;
+	static const int ecols = entropy->cols * ENTROPY_CHANNELS;
+	static const int ediff = ENTROPY_CHANNELS - channels;
+	const uchar *r;
+	uchar *i;
+	const uchar *e;
 
+	int tcount = rows / threadNums;
+	int start = (int)threadNo * tcount;
+	tcount += start;
+
+	// Assume for now they're all continuous
+	r = replacement->data + (start * cols);
+	i = img->data + (start * cols);
+	e = entropy->data + (start * ecols);
+
+	start *= img->cols;
+	tcount *= img->cols;
+
+	for (; start < tcount; start++, e += ediff)
+	{
+		for (int j = 0; j < channels; ++j, ++i, ++e, ++r)
+		{
+			*i =  ((*i * *e) / UCHAR_MAX) + ((*r * (UCHAR_MAX - *e)) / UCHAR_MAX);
+		}
+	}
+}
+
+void BackGround::composite(Mat& img)
+{
 	CV_DbgAssert(img.isContinuous());
 	CV_DbgAssert(mReplacement.isContinuous());
 	CV_DbgAssert(mEntropy.isContinuous());
 
-	if (img.isContinuous() && mReplacement.isContinuous() && mEntropy.isContinuous())
-	{
-		static int dataSize = rows * cols;
-		dest = img.data;
-		ori = mReplacement.data;
-		ent = mEntropy.data;
-
-		for (int i = 0, k = 0; i < dataSize; i += channels, k += ENTROPY_CHANNELS)
-		{
-			uchar* d = &dest[i];
-			const uchar* o = &ori[i];
-			const uchar* e = &ent[k];
-
-			*d = ((*d * *e) / 255) + ((*o * (255 - *e)) / 255);
-
-			d = &dest[i + 1];
-			o = &ori[i + 1];
-			e = &ent[k + 1];
-			*d = ((*d * *e) / 255) + ((*o * (255 - *e)) / 255);
-
-			d = &dest[i + 2];
-			o = &ori[i + 2];
-			e = &ent[k + 2];
-			*d = ((*d * *e) / 255) + ((*o * (255 - *e)) / 255);
-		}
-	}
+	perf::ThreadPool::doWork(&SegComposite, &img, &mReplacement, &mEntropy);
 }
+

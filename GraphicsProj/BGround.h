@@ -13,13 +13,12 @@ namespace proj
 
 		void forceBackground(const cv::Mat& newBg);
 		void extractForeground(cv::Mat&);
-		void composite(cv::Mat&) const;
+		void composite(cv::Mat&);
 
 	private:
 		cv::Mat mBg;
 		cv::Mat mEntropy;
 		cv::Mat mReplacement;
-		mutable int mFramesSinceBG;
 	};
 }
 
