@@ -319,6 +319,10 @@ void BackGround::composite(Mat& img) const
 	const uchar * ori;
 	const uchar * ent;
 
+	CV_DbgAssert(img.isContinuous());
+	CV_DbgAssert(mReplacement.isContinuous());
+	CV_DbgAssert(mEntropy.isContinuous());
+
 	if (img.isContinuous() && mReplacement.isContinuous() && mEntropy.isContinuous())
 	{
 		static int dataSize = rows * cols;
@@ -328,13 +332,21 @@ void BackGround::composite(Mat& img) const
 
 		for (int i = 0, k = 0; i < dataSize; i += channels, k += ENTROPY_CHANNELS)
 		{
-			dest[i] = (dest[i] * ent[k]) / 255;
-			dest[i + 1] = (dest[i + 1] * ent[k + 1]) / 255;
-			dest[i + 2] = (dest[i + 2] * ent[k + 2]) / 255;
+			uchar* d = &dest[i];
+			const uchar* o = &ori[i];
+			const uchar* e = &ent[k];
 
-			dest[i] += (ori[i] * (255 - ent[k])) / 255;
-			dest[i + 1] += (ori[i + 1] * (255 - ent[k + 1])) / 255;
-			dest[i + 2] += (ori[i + 2] * (255 - ent[k + 2])) / 255;
+			*d = ((*d * *e) / 255) + ((*o * (255 - *e)) / 255);
+
+			d = &dest[i + 1];
+			o = &ori[i + 1];
+			e = &ent[k + 1];
+			*d = ((*d * *e) / 255) + ((*o * (255 - *e)) / 255);
+
+			d = &dest[i + 2];
+			o = &ori[i + 2];
+			e = &ent[k + 2];
+			*d = ((*d * *e) / 255) + ((*o * (255 - *e)) / 255);
 		}
 	}
 }
