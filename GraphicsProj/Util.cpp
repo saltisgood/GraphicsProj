@@ -1,6 +1,7 @@
 #include <cmath>
 
 #include "Util.h"
+#include "Threading.h"
 
 using namespace proj;
 using namespace cv;
@@ -9,16 +10,69 @@ using namespace std;
 #define max(x, y) ((x > y) ? x : y)
 
 template<typename T>
+void segBlueDiff WORKER_ARGS(threadNo, numThreads, pimg, pmod,,)
+{
+	const Mat * img = (const Mat *)pimg;
+	Mat * mod = (Mat *)pmod;
+
+	static const int channels = img->channels();
+	static const int rows = img->rows;
+	static const int cols = img->cols * channels;
+
+	int tcount = rows / numThreads;
+	int start = (int)threadNo * tcount;
+	tcount += start;
+
+	const T* i;
+	T* m;
+
+	if (img->isContinuous() && mod->isContinuous())
+	{
+		start *= img->cols;
+		tcount *= img->cols;
+
+		i = img->data + (start * channels);
+		m = mod->data + (start * channels);
+
+		for (; start < tcount; ++start, i += channels, m += channels)
+		{
+			if (*i > *(i + 1))
+			{
+				*m = *(m + 1);
+			}
+		}
+	}
+	else
+	{
+		for (; start < tcount; ++start)
+		{
+			i = img->ptr<T>(start);
+			m = mod->ptr<T>(start);
+
+			for (int c = 0; c < cols; c += channels)
+			{
+				if (i[c] > i[c + 1])
+				{
+					m[c] = m[c + 1];
+				}
+			}
+		}
+	}
+}
+
+template<typename T>
 void blueDiff(const Mat& img, Mat& mod)
 {
-	int channels = img.channels();
-	int rows = img.rows;
-	int cols = img.cols * channels;
-
-	CV_DbgAssert(channels >= 3);
+	CV_DbgAssert(img.channels() >= 3);
 	CV_DbgAssert(img.depth() == mod.depth());
 	CV_DbgAssert(img.channels() == mod.channels());
 	CV_DbgAssert(img.cols == mod.cols && img.rows == mod.rows);
+
+	perf::ThreadPool::doWork(&segBlueDiff<uchar>, (void *)&img, &mod);
+
+	/* int channels = img.channels();
+	int rows = img.rows;
+	int cols = img.cols * channels;
 
 	for (int i = 0; i < rows; i++)
 	{
@@ -32,7 +86,7 @@ void blueDiff(const Mat& img, Mat& mod)
 				q[j] = p[j + 1];
 			}
 		}
-	}
+	} */
 }
 
 template<typename T>
@@ -63,28 +117,60 @@ void greenDiff(const Mat& img, Mat& mod)
 }
 
 template<typename T>
-void blueMask(const Mat& img, Mat& mask)
+void segBlueMask WORKER_ARGS(threadNo, numThreads, pimg, pmask,,)
 {
-	int channels = img.channels();
-	int rows = img.rows;
-	int cols = img.cols * channels;
+	const Mat * img = (const Mat *)pimg;
+	Mat * mask = (Mat *)pmask;
 
-	CV_DbgAssert(channels >= 3);
-	CV_DbgAssert(rows == mask.rows && img.cols == mask.cols);
-	CV_DbgAssert(mask.channels() == 1);
-	CV_DbgAssert(img.depth() == mask.depth());
+	static const int channels = img->channels();
+	static const int rows = img->rows;
+	static const int cols = img->cols * channels;
 
-	for (int i = 0; i < rows; i++)
+	int tcount = rows / numThreads;
+	int start = (int)threadNo * tcount;
+	tcount += start;
+
+	T* m;
+	const T* i;
+
+	if (img->isContinuous() && mask->isContinuous())
 	{
-		const T* p = img.ptr<T>(i);
-		T* q = mask.ptr<T>(i);
+		start *= img->cols;
+		tcount *= img->cols;
 
-		for (int j = 0, k = 0; j < cols; j += channels, k++)
+		m = mask->data + start;
+		i = img->data + (start * channels);
+
+		for (; start < tcount; ++start, i += channels, ++m)
 		{
-			T mx = max(p[j + 1], p[j + 2]);
-			q[k] = (mx > p[j]) ? 0 : p[j] - mx;
+			T mx = max(*(i + 1), *(i + 2));
+			*m = (mx > *i) ? 0 : *i - mx;
 		}
 	}
+	else
+	{
+		for (int r = start; r < tcount; r++)
+		{
+			m = mask->ptr<T>(r);
+			i = img->ptr<T>(r);
+
+			for (int c = 0, k = 0; c < cols; c += channels, ++k)
+			{
+				T mx = max(i[c + 1], i[c + 2]);
+				m[k] = (mx > i[c]) ? 0 : i[c] - mx;
+			}
+		}
+	}
+}
+
+template<typename T>
+void blueMask(const Mat& img, Mat& mask)
+{
+	CV_DbgAssert(img.channels() >= 3);
+	CV_DbgAssert(img.rows == mask.rows && img.cols == mask.cols);
+	CV_DbgAssert(mask.channels() == 1);
+	
+	perf::ThreadPool::doWork(&segBlueMask<uchar>, (void *)&img, &mask);
 }
 
 template<typename T>

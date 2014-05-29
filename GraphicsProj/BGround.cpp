@@ -157,6 +157,10 @@ void BackGround::extractForeground(Mat& img)
 	CV_DbgAssert(mEntropy.isContinuous());
 
 	perf::ThreadPool::doWork(&segUpdateBG, &mBg, &tmp, &img, &mEntropy);
+
+	static const Mat kernel = getStructuringElement(MORPH_RECT, Size(15, 15));
+	static const Point pt(-1, -1);
+	morphologyEx(mEntropy, mEntropy, MORPH_CLOSE, kernel, pt, 3);
 }
 
 void segComposite WORKER_ARGS(threadNo, threadNums, pimg, preplacement, pentropy,)
@@ -197,10 +201,6 @@ void segComposite WORKER_ARGS(threadNo, threadNums, pimg, preplacement, pentropy
 
 void BackGround::composite(Mat& img)
 {
-	static const Mat kernel = getStructuringElement(MORPH_RECT, Size(15, 15));
-	static const Point pt(-1, -1);
-	morphologyEx(mEntropy, mEntropy, MORPH_CLOSE, kernel, pt, 3);
-
 	CV_DbgAssert(img.isContinuous());
 	CV_DbgAssert(mReplacement.isContinuous());
 	CV_DbgAssert(mEntropy.isContinuous());
@@ -208,3 +208,42 @@ void BackGround::composite(Mat& img)
 	perf::ThreadPool::doWork(&segComposite, &img, &mReplacement, &mEntropy);
 }
 
+void segApplyMask WORKER_ARGS(threadNo, numThreads, pimg, pmask,,)
+{
+	Mat * img = (Mat *)pimg;
+	const Mat * mask = (Mat *)pmask;
+
+	static const int rows = img->rows;
+	static const int channels = img->channels();
+	static const int cols = img->cols * channels;
+	static const int ecols = mask->cols * ENTROPY_CHANNELS;
+	uchar *i;
+	const uchar *m;
+
+	int tcount = rows / numThreads;
+	int start = (int)threadNo * tcount;
+	tcount += start;
+
+	// Assume for now they're all continuous
+	i = img->data + (start * cols);
+	m = mask->data + (start * ecols);
+
+	start *= img->cols;
+	tcount *= img->cols;
+
+	for (; start < tcount; start++, ++m)
+	{
+		for (int j = 0; j < channels; ++j, ++i)
+		{
+			*i =  ((*i * *m) / UCHAR_MAX);
+		}
+	}
+}
+
+void BackGround::applyMask(cv::Mat& img)
+{
+	CV_DbgAssert(img.isContinuous());
+	CV_DbgAssert(mEntropy.isContinuous());
+
+	perf::ThreadPool::doWork(&segApplyMask, &img, &mEntropy);
+}

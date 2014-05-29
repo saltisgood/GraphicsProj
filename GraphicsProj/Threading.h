@@ -9,7 +9,7 @@
 
 #include "Util.h"
 
-#define WORKER_ARGS(a,b,c,d,e,f) (uchar a, uchar b, void * c, void * d, void * e, void * f)
+#define WORKER_ARGS(threadNo, numThreads, arg0, arg1, arg2, arg3) (uchar threadNo, uchar numThreads, void * arg0, void * arg1, void * arg2, void * arg3)
 
 namespace perf
 {
@@ -32,7 +32,7 @@ namespace perf
 
 		const uchar mThreadNum;
 		std::vector<std::thread> mThreads;
-		std::condition_variable mCondition;
+		std::vector<std::condition_variable *> mConditions;
 		std::mutex mMutex;
 		std::mutex mWorkMutex;
 		std::atomic<uchar> mAtomicCount;

@@ -14,7 +14,7 @@ ThreadPool * ThreadPool::sInstance = new ThreadPool();
 ThreadPool::ThreadPool() : 
 	mThreadNum(THREAD_NUM),
 	mThreads(),
-	mCondition(),
+	mConditions(),
 	mMutex(),
 	mWorkMutex(),
 	mAtomicCount(0),
@@ -28,6 +28,7 @@ ThreadPool::ThreadPool() :
 {
 	for (uchar i = 0; i < mThreadNum; i++)
 	{
+		mConditions.push_back(new condition_variable());
 		mThreads.push_back(thread(&perf::ThreadPool::wait, this, i));
 	}
 }
@@ -36,23 +37,31 @@ ThreadPool::~ThreadPool()
 {
 	mThreadExit = true;
 	mWorkAvailable = true;
-	mCondition.notify_all();
+
+	for (auto& cond : mConditions)
+	{
+		cond->notify_one();
+		delete cond;
+	}
 }
 
 void ThreadPool::wait(uchar threadNum)
 {
 	mutex lck;
 	unique_lock<mutex> ulck(lck);
+	unique_lock<mutex> worklck(mWorkMutex, std::defer_lock);
 	bool& work = mWorkAvailable;
+
+	condition_variable* cond = mConditions.at(threadNum);
 
 	while (!mThreadExit)
 	{
-		mWorkMutex.lock();
-		mWorkMutex.unlock();
+		worklck.lock();
+		worklck.unlock();
 
 		mAtomicCount++;
 
-		mCondition.wait(ulck, [&work]() { return work; });
+		cond->wait(ulck, [&work]() { return work; });
 
 		if (mThreadExit)
 		{
@@ -67,6 +76,11 @@ void ThreadPool::wait(uchar threadNum)
 
 void ThreadPool::doWorkInst(void (*func) WORKER_ARGS(,,,,,), void * arg1, void * arg2, void * arg3, void * arg4)
 {
+	while (mAtomicCount < mThreadNum)
+	{
+		this_thread::yield();
+	}
+
 	unique_lock<mutex> ulck(mWorkMutex);
 
 	mFunc = func;
@@ -80,7 +94,10 @@ void ThreadPool::doWorkInst(void (*func) WORKER_ARGS(,,,,,), void * arg1, void *
 
 	mWorkAvailable = true;
 	
-	mCondition.notify_all();
+	for (auto& cond : mConditions)
+	{
+		cond->notify_one();
+	}
 
 	while (mAtomicCount < avail_threads)
 	{

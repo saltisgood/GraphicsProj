@@ -145,8 +145,6 @@ void Looper::loop()
 
 void Looper::imgMod()
 {
-	static Mat mask;
-
 	// Copy source image
 	//mImageKey = mSource.clone();
 	//Remove background
@@ -156,6 +154,10 @@ void Looper::imgMod()
 	static Size boxBlurSize(5,5);
 	blur(mSource, mSource, boxBlurSize);
 	mBG.extractForeground(mSource);
+	Mat mat;
+	mImageKey = mSource.clone();
+	mBG.applyMask(mImageKey);
+	proj::rgbKey(mImageKey, mat, proj::Colour::BLUE, false, true);
 	mBG.composite(mSource);
 	return;
 	// Extract colour

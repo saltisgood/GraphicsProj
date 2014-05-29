@@ -14,6 +14,9 @@ namespace proj
 		void forceBackground(const cv::Mat& newBg);
 		void extractForeground(cv::Mat&);
 		void composite(cv::Mat&);
+		void applyMask(cv::Mat&);
+
+		const cv::Mat& getMask() const { return mEntropy; }
 
 	private:
 		cv::Mat mBg;
