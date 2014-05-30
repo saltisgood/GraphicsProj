@@ -3,7 +3,7 @@
 
 namespace sGL
 {
-	class TextureRegion
+	struct TextureRegion
 	{
 	public:
 		TextureRegion(float texWidth, float texHeight, float x, float y, float width, float height);
@@ -12,6 +12,9 @@ namespace sGL
 		const float u2;
 		const float v1;
 		const float v2;
+
+	private:
+		TextureRegion& operator=(const TextureRegion&);
 	};
 }
 

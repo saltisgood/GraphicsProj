@@ -93,6 +93,8 @@ void ThreadPool::doWorkInst(void (*func) WORKER_ARGS(,,,,,), void * arg1, void *
 
 	mWorkAvailable = true;
 	
+	int loops = 0;
+
 	for (auto& cond : mConditions)
 	{
 		cond->notify_one();
@@ -101,6 +103,14 @@ void ThreadPool::doWorkInst(void (*func) WORKER_ARGS(,,,,,), void * arg1, void *
 	while (mAtomicCount < avail_threads)
 	{
 		this_thread::yield();
+
+		if (++loops > 250)
+		{
+			for (auto& cond : mConditions)
+			{
+				cond->notify_one();
+			}
+		}
 	}
 
 	mAtomicCount = 0;

@@ -9,7 +9,7 @@ using namespace proj;
 using namespace sGL;
 
 const string WINDOW_TITLE = "Graphics Project";
-const int THRESH = 120;
+const int THRESH = 10;
 const int MAX_THRESH = 255;
 const int ESC_KEY = 27;
 
@@ -130,6 +130,9 @@ void Looper::loop()
 		updateWindow(WINDOW_TITLE);
 
 		char c = (char)waitKey(25);
+
+
+
 		if (c == ESC_KEY) break;
 	}
 
@@ -140,41 +143,36 @@ void Looper::loop()
 
 void Looper::imgMod()
 {
-	// Copy source image
-	//mImageKey = mSource.clone();
-	//Remove background
-	//mBG.extractForeground(mImageKey);
-	//proj::rgbKey(mSource, mask, proj::Colour::BLUE, false);
-	//mSource = mask;
+	// Apply a small blur to reduce noise
 	static Size boxBlurSize(5,5);
 	blur(mSource, mSource, boxBlurSize);
+	// Extract the matte from the static background
 	mBG.extractForeground(mSource);
 	static Mat mat;
+	// Copy the original image
 	mImageKey = mSource.clone();
+	// Use the mask to key out the moving image
 	mBG.applyMask(mImageKey);
+	// Apply a reverse bluescreen method to get a grayscale keyed out image
 	proj::rgbKey(mImageKey, mat, proj::Colour::BLUE, false, false);
+	// Overlay the keyed out source (original colour) image over the BG
 	mBG.composite(mSource);
-	return;
-	// Extract colour
-	proj::chromaKey(mImageKey, mGloveColour);
-	// Convert to grayscale
-	cvtColor(mImageKey, mImageMod, CV_BGR2GRAY);
-	// Blur
-	blur(mImageMod, mImageMod, Size(3, 3));
-
-	shapeDetect();	
+	// Detect shapes using the gray matte
+	shapeDetect(mat);
 }
 
-void Looper::shapeDetect()
+void Looper::shapeDetect(Mat& img)
 {
-	Mat threshold_out;
 	vector<vector<Point> > contours;
 	vector<Vec4i> hierarchy;
 
 	//Detect edges
-	threshold(mImageMod, threshold_out, THRESH, MAX_THRESH, THRESH_BINARY);
+	threshold(img, img, THRESH, MAX_THRESH, THRESH_BINARY);
+	static Mat kernel = getStructuringElement(MORPH_RECT, Size(5, 5));
+	static const Point pt(-1, -1);
+	morphologyEx(img, img, MORPH_CLOSE, kernel, pt, 1);
 	// Find shapes
-	findContours(threshold_out, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+	findContours(img, contours, hierarchy, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
 	// Approximate contours to polys
 	vector<vector<Point> > shapes(contours.size());
 	vector<Rect> boundRect(contours.size());
@@ -190,7 +188,7 @@ void Looper::shapeDetect()
 	interpretImg(sortedHands);
 }
 
-void Looper::interpretImg(vector<Rect>& shapes)
+void Looper::interpretImg(vector<Rect>&)
 {
 	if (mArgs.isCamera)
 	{

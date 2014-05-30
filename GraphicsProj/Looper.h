@@ -24,7 +24,7 @@ namespace disp
 	private:
 		void init();
 		void imgMod();
-		void shapeDetect();
+		void shapeDetect(cv::Mat&);
 		void interpretImg(cv::vector<cv::Rect>& shapes);
 
 		Display mDisplay;

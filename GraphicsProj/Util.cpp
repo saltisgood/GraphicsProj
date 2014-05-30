@@ -7,7 +7,9 @@ using namespace proj;
 using namespace cv;
 using namespace std;
 
+#ifndef max
 #define max(x, y) ((x > y) ? x : y)
+#endif
 
 template<typename T>
 void segBlueDiff WORKER_ARGS(threadNo, numThreads, pimg, pmod,,)

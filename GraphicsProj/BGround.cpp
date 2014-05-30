@@ -27,7 +27,7 @@ void BackGround::forceBackground(const Mat& newBg)
 #define MAX_DIFF 100
 #define ENTROPY_CHANNELS 1
 
-const int DIFF_INTERVAL = MAX_DIFF - MIN_DIFF;
+const uchar DIFF_INTERVAL = MAX_DIFF - MIN_DIFF;
 
 void segUpdateBG WORKER_ARGS(threadNo, threadNums, pbg, pimg, pentropy,)
 {
@@ -81,7 +81,7 @@ void segUpdateBG WORKER_ARGS(threadNo, threadNums, pbg, pimg, pentropy,)
 					}
 				}
 
-				const uchar avediff = (ave <= MIN_DIFF) ? 0 : ((ave >= MAX_DIFF) ? UCHAR_MAX : ((UCHAR_MAX * (ave - MIN_DIFF)) / DIFF_INTERVAL));
+				const uchar avediff = (uchar)((ave <= MIN_DIFF) ? 0 : ((ave >= MAX_DIFF) ? UCHAR_MAX : ((UCHAR_MAX * (ave - MIN_DIFF)) / DIFF_INTERVAL)));
 
 				for (int y = 0; (y < YBLOCK_SIZE) && (row + y < rows); y++)
 				{
@@ -115,7 +115,7 @@ void segUpdateBG WORKER_ARGS(threadNo, threadNums, pbg, pimg, pentropy,)
 					}
 				}
 
-				const uchar avediff = (ave <= MIN_DIFF) ? 0 : ((ave >= MAX_DIFF) ? UCHAR_MAX : ((UCHAR_MAX * (ave - MIN_DIFF)) / DIFF_INTERVAL));
+				const uchar avediff = (uchar)((ave <= MIN_DIFF) ? 0 : ((ave >= MAX_DIFF) ? UCHAR_MAX : ((UCHAR_MAX * (ave - MIN_DIFF)) / DIFF_INTERVAL)));
 
 				for (int y = 0; y < YBLOCK_SIZE; ++y)
 				{
@@ -123,7 +123,7 @@ void segUpdateBG WORKER_ARGS(threadNo, threadNums, pbg, pimg, pentropy,)
 
 					for (int x = 0; x < XBLOCK_SIZE; ++x)
 					{
-						e[col + (x * channels)] = 0;
+						e[col + (x * channels)] = avediff;
 					}
 				}
 			}

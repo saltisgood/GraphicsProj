@@ -18,6 +18,8 @@ namespace proj
 
 		void drawAnything(cv::Mat& img);
 	private:
+		Logic& operator=(const Logic&);
+
 		bool mIsCalibrated;
 		const disp::Display& mDisplay;
 		Colour mTextColour;
