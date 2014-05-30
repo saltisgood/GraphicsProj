@@ -21,6 +21,7 @@ namespace disp
 		virtual ~Looper();
 
 		void loop();
+		const Display& getDisplay() const { return mDisplay; }
 	private:
 		void init();
 		void imgMod();

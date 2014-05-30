@@ -1,5 +1,4 @@
 #include "Hand.h"
-#include "Util.h"
 
 using namespace proj;
 using namespace cv;
@@ -42,4 +41,16 @@ bool Hand::checkSize(const Rect& hand) const
 	{
 		return false;
 	}
+}
+
+#define REQUIRED_CALIB_COUNT 50
+
+bool Hand::calibrate(int areaParam, bool open)
+{
+	uint& calibCount = (open) ? mOpenAreaCalibCount : mCloseAreaCalibCount;
+	int& area = (open) ? mOpenArea : mCloseArea;
+
+	updateRollingAve(area, calibCount, areaParam);
+
+	return calibCount >= REQUIRED_CALIB_COUNT;
 }

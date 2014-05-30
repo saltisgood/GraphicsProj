@@ -35,7 +35,7 @@ Looper::Looper(Display display, VideoCapture& videoIn, const switches& args) :
 
 	mGloveColour(8, 110, 97),
 
-	mHands(),
+	mHands(*this),
 
 	mBG(),
 
@@ -108,7 +108,9 @@ void Looper::loop()
 		// Do stuff!
 		imgMod();
 
-		if (mArgs.debugDisplay)
+		mHands.draw(mSource, mArgs.debugDisplay);
+
+		/* if (mArgs.debugDisplay)
 		{
 			for (int i = 0; i < MAX_HANDS; i++)
 			{
@@ -123,7 +125,7 @@ void Looper::loop()
 					line(mSource, curr, next, mDrawColour, 3);
 				}
 			}
-		}
+		} */
 		mProgramLogic.drawAnything(mSource);
 		
 		mTexture->copyFrom(mSource);
@@ -185,11 +187,15 @@ void Looper::shapeDetect(Mat& img)
 
 	vector<Rect> sortedHands = sortRect(boundRect, 5);
 
-	interpretImg(sortedHands);
+	mHands.updateHands(sortedHands);
+
+	//interpretImg(sortedHands);
 }
 
-void Looper::interpretImg(vector<Rect>&)
+void Looper::interpretImg(vector<Rect>& hands)
 {
+	mHands.updateHands(hands);
+
 	if (mArgs.isCamera)
 	{
 
@@ -237,7 +243,7 @@ void disp::onDraw(void *data)
 #ifdef _DEBUG
 void disp::calibrate(Hands& hands, vector<Rect>& rects, bool open)
 {
-	if (rects[0].x < rects[1].x)
+	/* if (rects[0].x < rects[1].x)
 	{
 		hands.getHand(Hand::LEFT).calibrate(rects[0], open);
 		hands.getHand(Hand::RIGHT).calibrate(rects[1], open);
@@ -246,6 +252,6 @@ void disp::calibrate(Hands& hands, vector<Rect>& rects, bool open)
 	{
 		hands.getHand(Hand::RIGHT).calibrate(rects[0], open);
 		hands.getHand(Hand::LEFT).calibrate(rects[1], open);
-	}
+	} */
 }
 #endif

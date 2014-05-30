@@ -2,18 +2,25 @@
 #define HAND_H_
 
 #include <opencv2/core/core.hpp>
+#include "Util.h"
 
 namespace proj
 {
 	class Hand
 	{
+		friend class Hands;
+
 	public:
-		Hand(bool isLeft = false) : mPrevX(0), mPrevY(0), mIsLeft(isLeft), mPrevRect(), mOpenRect(), mCloseRect() {}
+		Hand() : mPrevX(0), mPrevY(0), mPrevRect(), mOpenRect(), mCloseRect() {}
 		virtual ~Hand() {}
 
 		void calibrate(cv::Rect& rect, bool open);
 		bool checkDistance(const cv::Rect& rect) const;
 		bool checkSize(const cv::Rect&) const;
+
+		// Calibrate the Hand with an area for a known state. Returns a value that says whether the hand has
+		// reached required calibration.
+		bool calibrate(int area, bool open);
 
 		const cv::Rect& getClosedRect() const { return mCloseRect; }
 		const cv::Rect& getOpenRect() const { return mOpenRect; }
@@ -22,16 +29,16 @@ namespace proj
 		void setOpenRect(cv::Rect& openRect) { mOpenRect = openRect; }
 		void setPrevRect(cv::Rect& prevRect) { mPrevRect = prevRect; }
 
-		static const int LEFT = 0;
-		static const int RIGHT = 1;
-
 	private:
 		int mPrevX;
 		int mPrevY;
-		bool mIsLeft;
 		cv::Rect mPrevRect;
 		cv::Rect mOpenRect;
 		cv::Rect mCloseRect;
+		int mCloseArea;
+		uint mCloseAreaCalibCount;
+		int mOpenArea;
+		uint mOpenAreaCalibCount;
 
 		static const int MAX_HAND_DIFF = 60;
 		static const int MAX_AREA_DIFF = 10000;

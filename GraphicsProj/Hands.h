@@ -5,31 +5,37 @@
 #include "Hand.h"
 #include "Line.h"
 
+namespace disp
+{
+	class Looper;
+}
+
 namespace proj
 {
 	class Hands
 	{
 	public:
-		Hands()
-		{
-			mHands[0] = Hand(true);
-			mHands[1] = Hand();
-			mLines[0] = Line();
-			mLines[1] = Line();
-		}
+		Hands(disp::Looper& looper);
 
 		virtual ~Hands() {}
 
-		Hand& getHand(int hand) { return mHands[hand]; }
+		Hand& getHand() { return mHand; }
 
-		void setHandRect(int hand, cv::Rect& pos) { mHands[hand].setPrevRect(pos); }
+		void setHandRect(cv::Rect& pos) { mHand.setPrevRect(pos); }
 		bool updateHands(cv::vector<cv::Rect>& hands);
-		const cv::Rect& getPrevRect(int hand) const { return mHands[hand].getPrevRect(); }
-		const Line& getLine(int hand) const { return mLines[hand]; }
+		const cv::Rect& getPrevRect() const { return mHand.getPrevRect(); }
+		const Line& getLine() const { return mLine; }
+		void draw(cv::Mat&, bool) const;
 
 	private:
-		Hand mHands[2];
-		Line mLines[2];
+		disp::Looper& mLooper;
+		Hand mHand;
+		Line mLine;
+		bool mCalibrated;
+		bool mCalibratingClosed;
+		bool mInCalibrationArea;
+		cv::Rect mCalibrationRectOpen;
+		cv::Rect mCalibrationRectClosed;
 	};
 }
 
