@@ -81,50 +81,49 @@ void segUpdateBG WORKER_ARGS(threadNo, threadNums, pbg, pimg, pentropy,)
 					}
 				}
 
-				if (ave <= MIN_DIFF)
+				const uchar avediff = (ave <= MIN_DIFF) ? 0 : ((ave >= MAX_DIFF) ? UCHAR_MAX : ((UCHAR_MAX * (ave - MIN_DIFF)) / DIFF_INTERVAL));
+
+				for (int y = 0; (y < YBLOCK_SIZE) && (row + y < rows); y++)
 				{
-					for (int y = 0; (y < YBLOCK_SIZE) && (row + y < rows); y++)
+					etmp = erow + (y * ecols);
+
+					for (int x = 0; (x < XBLOCK_SIZE) && ((channels * (col + x)) < cols); ++x, ++etmp)
 					{
-						btmp = brow + (y * cols);
-						imtmp = imrow + (y * cols);
-						etmp = erow + (y * ecols);
-
-						for (int x = 0; (x < XBLOCK_SIZE) && ((channels * (col + x)) < cols); x++, ++etmp)
-						{
-							for (int c = 0; c < channels; ++c, ++btmp, ++imtmp)
-							{
-								updateWeightedAve<uchar>(*btmp, 7, *imtmp);
-							}
-
-							*etmp = 0;
-						}
+						*etmp = avediff;
 					}
 				}
-				else if (ave >= MAX_DIFF)
-				{
-					for (int y = 0; (y < YBLOCK_SIZE) && (row + y < rows); y++)
-					{
-						etmp = erow + (y * ecols);
+			}
+		}
+	}
+	else
+	{
+		for (; start < tcount; start += YBLOCK_SIZE)
+		{
+			for (int col = 0; col < cols; col += XBLOCK_SIZE * channels)
+			{
+				int ave = 0;
+				uint ind = 0;
 
-						for (int x = 0; (x < XBLOCK_SIZE) && ((channels * (col + x)) < cols); ++x, ++etmp)
-						{
-							*etmp = 255;
-						}
+				for (int y = 0; y < YBLOCK_SIZE; ++y)
+				{
+					b = bg->ptr<uchar>(start + y);
+					im = img->ptr<uchar>(start + y);
+
+					for (int x = 0; x < XBLOCK_SIZE; ++x)
+					{
+						updateRollingAve(ave, ind, Colour::diff(b + col + (x * channels), im + col + (x * channels)));
 					}
 				}
-				else
+
+				const uchar avediff = (ave <= MIN_DIFF) ? 0 : ((ave >= MAX_DIFF) ? UCHAR_MAX : ((UCHAR_MAX * (ave - MIN_DIFF)) / DIFF_INTERVAL));
+
+				for (int y = 0; y < YBLOCK_SIZE; ++y)
 				{
-					//const uchar avediff = ave - MIN_DIFF;
-					const uchar avediff = (255 * (ave - MIN_DIFF)) / DIFF_INTERVAL;
+					e = entropy->ptr<uchar>(start + y);
 
-					for (int y = 0; (y < YBLOCK_SIZE) && (row + y < rows); y++)
+					for (int x = 0; x < XBLOCK_SIZE; ++x)
 					{
-						etmp = erow + (y * ecols);
-
-						for (int x = 0; (x < XBLOCK_SIZE) && ((channels * (col + x)) < cols); x++,  ++etmp)
-						{
-							*etmp = avediff;
-						}
+						e[col + (x * channels)] = 0;
 					}
 				}
 			}
@@ -134,18 +133,10 @@ void segUpdateBG WORKER_ARGS(threadNo, threadNums, pbg, pimg, pentropy,)
 
 void BackGround::extractForeground(const Mat& img)
 {
-	//Mat tmp;
-	//resize(img, tmp, Size(), 0.5, 0.5, CV_INTER_AREA);
-
 	if (mBg.empty())
 	{
 		forceBackground(img);
-		//forceBackground(tmp);
 	}
-
-	CV_DbgAssert(mBg.isContinuous());
-	CV_DbgAssert(img.isContinuous());
-	CV_DbgAssert(mEntropy.isContinuous());
 
 	perf::ThreadPool::doWork(&segUpdateBG, &mBg, (void *)&img, &mEntropy);
 
@@ -164,7 +155,6 @@ void segComposite WORKER_ARGS(threadNo, threadNums, pimg, preplacement, pentropy
 	static const int channels = img->channels();
 	static const int cols = img->cols * channels;
 	static const int ecols = entropy->cols * ENTROPY_CHANNELS;
-	static const int ediff = ENTROPY_CHANNELS - channels;
 	const uchar *r;
 	uchar *i;
 	const uchar *e;
@@ -173,29 +163,44 @@ void segComposite WORKER_ARGS(threadNo, threadNums, pimg, preplacement, pentropy
 	int start = (int)threadNo * tcount;
 	tcount += start;
 
-	// Assume for now they're all continuous
-	r = replacement->data + (start * cols);
-	i = img->data + (start * cols);
-	e = entropy->data + (start * ecols);
-
-	start *= img->cols;
-	tcount *= img->cols;
-
-	for (; start < tcount; start++, ++e)
+	if (replacement->isContinuous() && img->isContinuous() && entropy->isContinuous())
 	{
-		for (int j = 0; j < channels; ++j, ++i, ++r)
+		r = replacement->data + (start * cols);
+		i = img->data + (start * cols);
+		e = entropy->data + (start * ecols);
+
+		start *= img->cols;
+		tcount *= img->cols;
+
+		for (; start < tcount; start++, ++e)
 		{
-			*i =  ((*i * *e) / UCHAR_MAX) + ((*r * (UCHAR_MAX - *e)) / UCHAR_MAX);
+			for (int j = 0; j < channels; ++j, ++i, ++r)
+			{
+				*i =  ((*i * *e) / UCHAR_MAX) + ((*r * (UCHAR_MAX - *e)) / UCHAR_MAX);
+			}
+		}
+	}
+	else
+	{
+		for (; start < tcount; ++start)
+		{
+			r = replacement->ptr<uchar>(start);
+			i = img->ptr<uchar>(start);
+			e = entropy->ptr<uchar>(start);
+
+			for (int col = 0; col < cols; col += channels, ++e)
+			{
+				for (int c = 0; c < channels; ++c, ++r, ++i)
+				{
+					*i = ((*i * *e) / UCHAR_MAX) + ((*r * (UCHAR_MAX - *e)) / UCHAR_MAX);
+				}
+			}
 		}
 	}
 }
 
 void BackGround::composite(Mat& img)
 {
-	CV_DbgAssert(img.isContinuous());
-	CV_DbgAssert(mReplacement.isContinuous());
-	CV_DbgAssert(mEntropy.isContinuous());
-
 	perf::ThreadPool::doWork(&segComposite, &img, &mReplacement, &mEntropy);
 }
 
@@ -215,26 +220,41 @@ void segApplyMask WORKER_ARGS(threadNo, numThreads, pimg, pmask,,)
 	int start = (int)threadNo * tcount;
 	tcount += start;
 
-	// Assume for now they're all continuous
-	i = img->data + (start * cols);
-	m = mask->data + (start * ecols);
-
-	start *= img->cols;
-	tcount *= img->cols;
-
-	for (; start < tcount; start++, ++m)
+	if (img->isContinuous() && mask->isContinuous())
 	{
-		for (int j = 0; j < channels; ++j, ++i)
+		i = img->data + (start * cols);
+		m = mask->data + (start * ecols);
+
+		start *= img->cols;
+		tcount *= img->cols;
+
+		for (; start < tcount; start++, ++m)
 		{
-			*i =  ((*i * *m) / UCHAR_MAX);
+			for (int j = 0; j < channels; ++j, ++i)
+			{
+				*i =  ((*i * *m) / UCHAR_MAX);
+			}
+		}
+	}
+	else
+	{
+		for (; start < tcount; ++start)
+		{
+			i = img->ptr<uchar>(start);
+			m = mask->ptr<uchar>(start);
+
+			for (int col = 0; col < cols; col += channels, ++m)
+			{
+				for (int j = 0; j < channels; ++j, ++i)
+				{
+					*i = ((*i * *m) / UCHAR_MAX);
+				}
+			}
 		}
 	}
 }
 
 void BackGround::applyMask(cv::Mat& img)
 {
-	CV_DbgAssert(img.isContinuous());
-	CV_DbgAssert(mEntropy.isContinuous());
-
 	perf::ThreadPool::doWork(&segApplyMask, &img, &mEntropy);
 }
